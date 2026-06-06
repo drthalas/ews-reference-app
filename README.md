@@ -142,8 +142,9 @@ Required Railway env:
 
 - backend: `ALLOWED_ORIGINS=https://<frontend-public-url>`
 - frontend: `VITE_API_BASE_URL=https://<backend-public-url>`
+- frontend: `VITE_SWAGGER_URL=https://<backend-public-url>/swagger-ui.html`
 
-`VITE_API_BASE_URL` is used by Vite at build time. Redeploy/rebuild the frontend service after changing it.
+Vite env values are embedded at build time. Redeploy/rebuild the frontend service after changing `VITE_API_BASE_URL` or `VITE_SWAGGER_URL`.
 
 ## URLs
 

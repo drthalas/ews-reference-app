@@ -346,12 +346,13 @@ Target architecture:
   - root directory: `frontend`
   - public URL required
   - env: `VITE_API_BASE_URL=https://<backend-public-url>`
+  - env: `VITE_SWAGGER_URL=https://<backend-public-url>/swagger-ui.html`
 
 Important Railway notes:
 
 - `PORT` is normally provided by Railway.
-- `VITE_API_BASE_URL` is embedded at Vite build time.
-- Redeploy/rebuild frontend after changing `VITE_API_BASE_URL`.
+- `VITE_API_BASE_URL` and `VITE_SWAGGER_URL` are embedded at Vite build time.
+- Redeploy/rebuild frontend after changing `VITE_API_BASE_URL` or `VITE_SWAGGER_URL`.
 - Redeploy backend after changing `ALLOWED_ORIGINS`.
 - Backend in-memory data resets on restart or redeploy.
 
@@ -363,6 +364,7 @@ curl https://<backend-public-url>/api/work-items
 ```
 
 Then open frontend public URL and run the same scenario script.
+The Swagger button should open `https://<backend-public-url>/swagger-ui.html`.
 
 ## Known Limitations
 
@@ -380,6 +382,7 @@ Then open frontend public URL and run the same scenario script.
 If frontend cannot reach backend:
 
 - check `VITE_API_BASE_URL`
+- check `VITE_SWAGGER_URL` when the Swagger button points at the wrong backend
 - check backend `/api/health`
 - check backend CORS `ALLOWED_ORIGINS`
 - rebuild/redeploy frontend after env changes

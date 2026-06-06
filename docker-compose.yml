@@ -11,6 +11,7 @@ services:
       context: ./frontend
       args:
         VITE_API_BASE_URL: http://localhost:8080
+        VITE_SWAGGER_URL: http://localhost:8080/swagger-ui.html
     container_name: ews-reference-frontend
     depends_on:
       - backend

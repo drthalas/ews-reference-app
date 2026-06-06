@@ -42,6 +42,7 @@ Stage 13 finalizes README, `docs/runbook.md`, `docs/demo-scenarios.md`, API exam
 - Backend health URL: `http://localhost:8080/api/health`
 - Swagger UI: `http://localhost:8080/swagger-ui.html`
 - Frontend API base: `VITE_API_BASE_URL`, defaulting to `http://localhost:8080`
+- Frontend Swagger URL: `VITE_SWAGGER_URL`, defaulting to `${VITE_API_BASE_URL}/swagger-ui.html`
 - Railway backend env: `ALLOWED_ORIGINS=https://<frontend-public-url>`
 
 ## Domain Contract

@@ -79,11 +79,12 @@ Backend checks после deploy:
 Environment variables:
 
 - `VITE_API_BASE_URL=https://<backend-public-url>`
+- `VITE_SWAGGER_URL=https://<backend-public-url>/swagger-ui.html`
 - `PORT`: обычно задаётся Railway автоматически.
 
 Frontend Dockerfile собирает production `dist` и отдаёт его через nginx. Runtime слушает `${PORT}`, если Railway его задаёт, иначе default `80`.
 
-Важно: `VITE_API_BASE_URL` встраивается Vite на build time. Если backend public URL изменился, нужно обновить `VITE_API_BASE_URL` и redeploy/rebuild frontend service.
+Важно: `VITE_API_BASE_URL` и `VITE_SWAGGER_URL` встраиваются Vite на build time. Если backend public URL изменился, нужно обновить оба env values и redeploy/rebuild frontend service.
 
 Frontend checks после deploy:
 
@@ -91,6 +92,7 @@ Frontend checks после deploy:
 - backend health status виден на странице;
 - WorkItems list отображается;
 - selected WorkItem details отображается;
+- ссылка Swagger ведёт на `https://<backend-public-url>/swagger-ui.html`;
 - edit WorkItem сохраняет изменения через backend;
 - polling status виден;
 - кнопка внешнего изменения обновляет backend, а polling подтягивает изменения.
@@ -106,11 +108,12 @@ Frontend checks после deploy:
 7. Создать service `frontend`.
 8. Указать root directory `frontend`.
 9. Установить frontend env `VITE_API_BASE_URL=https://<backend-public-url>`.
-10. Deploy frontend.
-11. Скопировать frontend public URL.
-12. Установить backend env `ALLOWED_ORIGINS=https://<frontend-public-url>`.
-13. Redeploy backend.
-14. Выполнить smoke checks.
+10. Установить frontend env `VITE_SWAGGER_URL=https://<backend-public-url>/swagger-ui.html`.
+11. Deploy frontend.
+12. Скопировать frontend public URL.
+13. Установить backend env `ALLOWED_ORIGINS=https://<frontend-public-url>`.
+14. Redeploy backend.
+15. Выполнить smoke checks.
 
 ## Smoke Checks
 
@@ -127,6 +130,7 @@ Frontend:
 - открыть `https://<frontend-public-url>`;
 - убедиться, что health status backend отображается;
 - убедиться, что список WorkItems загружен;
+- открыть Swagger link и убедиться, что он ведёт на backend public URL;
 - выбрать WorkItem и сохранить изменение;
 - включить polling;
 - нажать `Имитировать внешнее изменение`;
@@ -141,7 +145,8 @@ Backend хранит WorkItem data in memory. На Railway restart или redepl
 Если frontend показывает ошибку backend:
 
 - проверить `VITE_API_BASE_URL` в frontend service;
-- убедиться, что frontend service был redeployed после изменения `VITE_API_BASE_URL`;
+- проверить `VITE_SWAGGER_URL` в frontend service;
+- убедиться, что frontend service был redeployed после изменения `VITE_API_BASE_URL` или `VITE_SWAGGER_URL`;
 - проверить backend public URL через `/api/health`;
 - проверить `ALLOWED_ORIGINS` в backend service;
 - убедиться, что `ALLOWED_ORIGINS` содержит точный frontend public URL без trailing slash;

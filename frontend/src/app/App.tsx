@@ -3,6 +3,7 @@ import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { Box, Button, Chip, Container, Divider, Stack, Typography } from '@mui/material';
 import { HealthCheck } from '../features/health/ui/HealthCheck';
 import { WorkItemsReadOnly } from '../features/workItems/ui/WorkItemsReadOnly';
+import { swaggerUrl } from '../shared/config/runtime';
 
 export function App() {
   return (
@@ -37,7 +38,7 @@ export function App() {
               Backend API documentation доступна через Swagger.
             </Typography>
             <Button
-              href="http://localhost:8080/swagger-ui.html"
+              href={swaggerUrl}
               target="_blank"
               rel="noreferrer"
               variant="contained"
