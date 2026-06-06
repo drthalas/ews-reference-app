@@ -4,7 +4,7 @@ EWS Reference App is a reference application for demonstrating common frontend-b
 
 ## Current Status
 
-Stages 1 through 6 are complete. Stage 7 is next.
+Stages 1 through 6.5 are complete. Stage 7 is next.
 
 Implemented:
 
@@ -19,6 +19,7 @@ Implemented:
 - Read-only frontend WorkItem list/detail integration through RTK Query
 - Server-confirmed frontend WorkItem edit flow with RTK Query cache invalidation
 - WorkItem polling controls and external-change demo endpoint
+- Railway demo-deploy preparation for separate frontend and backend services
 
 Documentation:
 
@@ -75,6 +76,26 @@ npm run dev
 docker compose build
 docker compose up
 ```
+
+## Railway Demo Deploy
+
+Railway deployment is documented in `docs/deploy-railway.md`.
+
+Target Railway project:
+
+- `ews-reference-app`
+
+Target services:
+
+- `backend`, root directory `backend`
+- `frontend`, root directory `frontend`
+
+Required Railway env:
+
+- backend: `ALLOWED_ORIGINS=https://<frontend-public-url>`
+- frontend: `VITE_API_BASE_URL=https://<backend-public-url>`
+
+`VITE_API_BASE_URL` is used by Vite at build time. Redeploy/rebuild the frontend service after changing it.
 
 ## URLs
 

@@ -14,9 +14,10 @@ EWS Reference App is a local reference app for demonstrating frontend-backend in
 - Stage 4 is done: frontend RTK Query read-only integration.
 - Stage 5 is done: server-confirmed WorkItem update.
 - Stage 6 is done: polling and external data changes.
+- Stage 6.5 is done: Railway demo-deploy preparation for separate frontend and backend services.
 - Stage 7 is next: optimistic update and rollback.
 
-Stage 6 implements WorkItem polling through RTK Query and a minimal `/api/dev/work-items/{id}/external-change` endpoint for deterministic external-change demos. Optimistic updates, rollback, async commands, conflict flows, stale response simulation, and full DEV controls remain out of scope until later stages.
+Stage 6 implements WorkItem polling through RTK Query and a minimal `/api/dev/work-items/{id}/external-change` endpoint for deterministic external-change demos. Stage 6.5 prepares Railway deployment docs and Docker/runtime compatibility; actual Railway services still need to be created or connected manually unless Railway CLI is available and authorized. Optimistic updates, rollback, async commands, conflict flows, stale response simulation, and full DEV controls remain out of scope until later stages.
 
 ## Repository Shape
 
@@ -24,6 +25,7 @@ Stage 6 implements WorkItem polling through RTK Query and a minimal `/api/dev/wo
 - `frontend/`: React 18, TypeScript, Vite, MUI, Redux Toolkit, and RTK Query scaffold.
 - `docs/`: architecture notes, policies, demo scenarios, and roadmap.
 - `docker-compose.yml`: local frontend and backend services.
+- `docs/deploy-railway.md`: Railway demo-deploy runbook for separate frontend and backend services.
 
 ## Existing Runtime
 
@@ -31,6 +33,7 @@ Stage 6 implements WorkItem polling through RTK Query and a minimal `/api/dev/wo
 - Backend health URL: `http://localhost:8080/api/health`
 - Swagger UI: `http://localhost:8080/swagger-ui.html`
 - Frontend API base: `VITE_API_BASE_URL`, defaulting to `http://localhost:8080`
+- Railway backend env: `ALLOWED_ORIGINS=https://<frontend-public-url>`
 
 ## Domain Contract
 

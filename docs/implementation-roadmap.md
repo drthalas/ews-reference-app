@@ -8,6 +8,7 @@
 4. Frontend RTK Query integration - done.
 5. Server-confirmed update - done.
 6. Polling - done.
+6.5. Railway demo deploy - done.
 7. Optimistic update - next.
 8. Async command flow - planned.
 9. DEV panel - planned.
@@ -81,6 +82,16 @@ Completed implementation stage:
 - added a minimal external-change demo action in the WorkItem details panel
 - added `POST /api/dev/work-items/{id}/external-change`
 - kept stale response protection and full DEV panel behavior out of scope
+
+### 6.5. Railway Demo Deploy
+
+Completed preparation stage:
+
+- added Railway-compatible backend `PORT` and `ALLOWED_ORIGINS` configuration
+- converted frontend Docker runtime to production static serving
+- documented separate Railway `backend` and `frontend` services
+- documented required env variables, CORS setup, smoke checks, redeploy notes, and troubleshooting
+- left actual Railway project/service creation as manual work when Railway CLI is unavailable or not authorized
 
 ### 7. Optimistic Update
 

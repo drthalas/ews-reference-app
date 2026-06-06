@@ -12,6 +12,7 @@ This file is the compact execution map for future work.
 | 4. Frontend RTK Query integration | Done | WorkItem models, feature API bindings, generated hooks, list rendering, and read-only detail panel. |
 | 5. Server-confirmed update | Done | PATCH UI, saving state, success/error feedback, and RTK Query cache invalidation. |
 | 6. Polling | Done | Polling controls, interval refresh, external-change support, and visual polling state. |
+| 6.5. Railway demo deploy | Done | Railway-ready backend/frontend runtime config and manual deploy runbook. |
 | 7. Optimistic update | Next | Optimistic mutation, pending state, rollback, and failed-change feedback. |
 
 ## Execution Order
@@ -23,12 +24,13 @@ This file is the compact execution map for future work.
 5. Add frontend WorkItem RTK Query endpoints and typed models.
 6. Add compact WorkItem list UI and server-confirmed edit flow.
 7. Add polling controls and external-change demo support.
-8. Add optimistic update flow with rollback and reconciliation.
-9. Add async command flow with command status lookup.
-10. Add DEV settings and simulation endpoints.
-11. Add conflict and stale response scenarios.
-12. Add prefetch scenario.
-13. Add final demo documentation and broader tests.
+8. Prepare Railway demo deploy for separate frontend and backend services.
+9. Add optimistic update flow with rollback and reconciliation.
+10. Add async command flow with command status lookup.
+11. Add DEV settings and simulation endpoints.
+12. Add conflict and stale response scenarios.
+13. Add prefetch scenario.
+14. Add final demo documentation and broader tests.
 
 ## Completed Stage 3 Checklist
 
@@ -68,6 +70,16 @@ This file is the compact execution map for future work.
 - Added WorkItem polling controls with a 3000 ms interval and visible polling status.
 - Added last refresh display, manual refresh, and external-change feedback.
 - Kept optimistic update, rollback, async commands, full DEV panel, and conflict/stale scenarios out of scope.
+
+## Completed Stage 6.5 Checklist
+
+- Added Railway-compatible backend `PORT` configuration.
+- Added backend CORS origins via `ALLOWED_ORIGINS` with local development defaults.
+- Replaced frontend Docker runtime with a production static nginx container.
+- Added frontend Docker build support for `VITE_API_BASE_URL`.
+- Updated Docker Compose to pass frontend API base URL at build time and local runtime port at container start.
+- Added Russian Railway deploy runbook in `docs/deploy-railway.md`.
+- Kept actual Railway service creation as a manual step unless Railway CLI is available and authorized.
 
 ## Future Implementation Guardrails
 
