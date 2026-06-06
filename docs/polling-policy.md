@@ -33,11 +33,17 @@ The UI should distinguish:
 
 Polling should not hide an active optimistic update, pending command, or conflict message.
 
+Stage 7 pauses polling while an optimistic WorkItem save is pending. This is a narrow protection against ordinary polling visually overwriting optimistic cache patches before the backend response. Full stale response detection remains planned for the conflict/stale stage.
+
 ## DEV Support
 
 Implemented in Stage 6:
 
 - `POST /api/dev/work-items/{id}/external-change`: toggles status between `blocked` and `in_progress` according to current state, adds the `external-change` tag, increments revision, and updates `updatedAt`.
+
+Implemented in Stage 7:
+
+- `POST /api/dev/fail-next-request`: makes the next WorkItem PATCH return `DEV_FORCED_FAILURE` once, then resets.
 
 Planned later:
 

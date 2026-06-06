@@ -6,6 +6,24 @@ export type UpdateWorkItemArgs = {
   changes: UpdateWorkItemRequest;
 };
 
+function applyChanges(workItem: WorkItem, changes: UpdateWorkItemRequest) {
+  if (changes.title !== undefined) {
+    workItem.title = changes.title;
+  }
+  if (changes.status !== undefined) {
+    workItem.status = changes.status;
+  }
+  if (changes.priority !== undefined) {
+    workItem.priority = changes.priority;
+  }
+  if (changes.assignee !== undefined) {
+    workItem.assignee = changes.assignee;
+  }
+  if (changes.tags !== undefined) {
+    workItem.tags = changes.tags;
+  }
+}
+
 export const workItemsApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getWorkItems: builder.query<WorkItem[], void>({
@@ -33,9 +51,57 @@ export const workItemsApi = baseApi.injectEndpoints({
         { type: 'WorkItem', id: 'LIST' },
       ],
     }),
+    updateWorkItemOptimistic: builder.mutation<WorkItem, UpdateWorkItemArgs>({
+      query: ({ id, changes }) => ({
+        url: `/work-items/${id}`,
+        method: 'PATCH',
+        body: changes,
+      }),
+      async onQueryStarted({ id, changes }, { dispatch, queryFulfilled }) {
+        const listPatch = dispatch(
+          workItemsApi.util.updateQueryData('getWorkItems', undefined, (draft) => {
+            const item = draft.find((workItem) => workItem.id === id);
+            if (item) {
+              applyChanges(item, changes);
+            }
+          })
+        );
+        const detailPatch = dispatch(
+          workItemsApi.util.updateQueryData('getWorkItem', id, (draft) => {
+            applyChanges(draft, changes);
+          })
+        );
+
+        try {
+          const { data: confirmed } = await queryFulfilled;
+          dispatch(
+            workItemsApi.util.updateQueryData('getWorkItems', undefined, (draft) => {
+              const index = draft.findIndex((workItem) => workItem.id === id);
+              if (index >= 0) {
+                draft[index] = confirmed;
+              }
+            })
+          );
+          dispatch(
+            workItemsApi.util.updateQueryData('getWorkItem', id, (draft) => {
+              Object.assign(draft, confirmed);
+            })
+          );
+        } catch {
+          listPatch.undo();
+          detailPatch.undo();
+        }
+      },
+    }),
     triggerExternalChange: builder.mutation<WorkItem, string>({
       query: (id) => ({
         url: `/dev/work-items/${id}/external-change`,
+        method: 'POST',
+      }),
+    }),
+    triggerFailNextRequest: builder.mutation<{ failNextRequest: boolean }, void>({
+      query: () => ({
+        url: '/dev/fail-next-request',
         method: 'POST',
       }),
     }),
@@ -46,5 +112,7 @@ export const {
   useGetWorkItemQuery,
   useGetWorkItemsQuery,
   useTriggerExternalChangeMutation,
+  useTriggerFailNextRequestMutation,
+  useUpdateWorkItemOptimisticMutation,
   useUpdateWorkItemMutation,
 } = workItemsApi;

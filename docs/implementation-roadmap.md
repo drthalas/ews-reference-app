@@ -9,8 +9,8 @@
 5. Server-confirmed update - done.
 6. Polling - done.
 6.5. Railway demo deploy - done.
-7. Optimistic update - next.
-8. Async command flow - planned.
+7. Optimistic update - done.
+8. Async command flow - next.
 9. DEV panel - planned.
 10. Conflict and stale scenarios - planned.
 11. Prefetch - planned.
@@ -95,11 +95,18 @@ Completed preparation stage:
 
 ### 7. Optimistic Update
 
-Next stage: add narrow optimistic updates with rollback and failed-change feedback.
+Completed implementation stage:
+
+- added optimistic WorkItem save through RTK Query cache patching
+- patched WorkItem list and selected detail caches before backend confirmation
+- added rollback by undoing RTK Query cache patches on backend error
+- added a minimal one-shot `POST /api/dev/fail-next-request` endpoint for rollback demos
+- added optimistic pending feedback and rollback error feedback
+- kept the classic server-confirmed update path working separately
 
 ### 8. Async Command Flow
 
-Add command submission and status lookup through `POST /api/work-items/{id}/commands` and `GET /api/commands/{operationId}`.
+Next stage: add command submission and status lookup through `POST /api/work-items/{id}/commands` and `GET /api/commands/{operationId}`.
 
 ### 9. DEV Panel
 

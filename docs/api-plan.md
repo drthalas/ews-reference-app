@@ -127,12 +127,23 @@ Behavior:
 - `updatedAt` is refreshed;
 - the updated WorkItem is returned.
 
+### `POST /api/dev/fail-next-request`
+
+Implemented. Arms a one-shot DEV failure for rollback demos.
+
+Behavior:
+
+- the endpoint returns `{ "failNextRequest": true }`;
+- the next `PATCH /api/work-items/{id}` returns `500` with `DEV_FORCED_FAILURE`;
+- the failure flag resets after one PATCH attempt;
+- following PATCH requests behave normally;
+- normal successful PATCH behavior still increments `revision` on actual change.
+
 Planned later DEV endpoints:
 
 - `GET /api/dev/settings`: returns active simulation settings.
 - `PUT /api/dev/settings`: replaces simulation settings such as latency and automatic failure flags.
 - `POST /api/dev/reset`: resets in-memory demo data and settings.
-- `POST /api/dev/fail-next-request`: makes the next normal request fail.
 - `POST /api/dev/fail-next-command`: makes the next async command fail.
 - `POST /api/dev/trigger-stale-response`: returns an older revision on the next eligible request.
 - `POST /api/dev/trigger-conflict`: prepares a revision mismatch for conflict demonstration.
@@ -155,6 +166,6 @@ Domain endpoints return the canonical error shape:
 }
 ```
 
-Implemented codes include `WORK_ITEM_NOT_FOUND`, `VALIDATION_ERROR`, and `INTERNAL_ERROR`.
+Implemented codes include `WORK_ITEM_NOT_FOUND`, `VALIDATION_ERROR`, `DEV_FORCED_FAILURE`, and `INTERNAL_ERROR`.
 
 Planned later codes include `WORK_ITEM_REVISION_CONFLICT`, `COMMAND_NOT_FOUND`, `COMMAND_FAILED`, and `DEV_SIMULATION_ERROR`.

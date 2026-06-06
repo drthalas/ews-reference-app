@@ -14,7 +14,7 @@ export function App() {
               EWS Reference App
             </Typography>
             <Typography variant="h6" color="text.secondary" sx={{ maxWidth: 720 }}>
-              Этап 6: polling и внешние изменения данных
+              Этап 7: optimistic update и rollback
             </Typography>
           </Stack>
 

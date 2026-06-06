@@ -13,7 +13,8 @@ This file is the compact execution map for future work.
 | 5. Server-confirmed update | Done | PATCH UI, saving state, success/error feedback, and RTK Query cache invalidation. |
 | 6. Polling | Done | Polling controls, interval refresh, external-change support, and visual polling state. |
 | 6.5. Railway demo deploy | Done | Railway-ready backend/frontend runtime config and manual deploy runbook. |
-| 7. Optimistic update | Next | Optimistic mutation, pending state, rollback, and failed-change feedback. |
+| 7. Optimistic update | Done | Optimistic mutation, pending state, rollback, and failed-change feedback. |
+| 8. Async command flow | Next | Command submission, operation status, delayed completion, and pending operation UI. |
 
 ## Execution Order
 
@@ -80,6 +81,19 @@ This file is the compact execution map for future work.
 - Updated Docker Compose to pass frontend API base URL at build time and local runtime port at container start.
 - Added Russian Railway deploy runbook in `docs/deploy-railway.md`.
 - Kept actual Railway service creation as a manual step unless Railway CLI is available and authorized.
+
+## Completed Stage 7 Checklist
+
+- Added minimal `POST /api/dev/fail-next-request` support for one-shot WorkItem PATCH failure demos.
+- Added `DEV_FORCED_FAILURE` ApiError handling.
+- Added backend tests for fail-next arming, one-shot failure, reset behavior, and normal PATCH revision increment.
+- Added `updateWorkItemOptimistic` RTK Query mutation using `onQueryStarted` and `updateQueryData`.
+- Patched both `getWorkItems` and `getWorkItem` caches optimistically.
+- Replaced optimistic cache entries with server-confirmed data on success.
+- Undid optimistic cache patches on backend error and showed rollback feedback.
+- Added optimistic/pending badge and a fail-next-request demo button.
+- Preserved the Stage 5 server-confirmed save path without optimistic cache patching.
+- Paused polling while an optimistic save is pending to avoid obvious stale visual overwrite.
 
 ## Future Implementation Guardrails
 

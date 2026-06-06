@@ -32,6 +32,8 @@ import {
   useGetWorkItemQuery,
   useGetWorkItemsQuery,
   useTriggerExternalChangeMutation,
+  useTriggerFailNextRequestMutation,
+  useUpdateWorkItemOptimisticMutation,
   useUpdateWorkItemMutation,
 } from '../api/workItemsApi';
 import {
@@ -105,11 +107,22 @@ function getMutationErrorMessage(error: unknown, fallback: string) {
   return fallback;
 }
 
+function toUpdateRequest(draft: WorkItemDraft): UpdateWorkItemRequest {
+  return {
+    title: draft.title.trim(),
+    status: draft.status,
+    priority: draft.priority,
+    assignee: draft.assignee.trim() || null,
+    tags: parseTags(draft.tags),
+  };
+}
+
 export function WorkItemsReadOnly() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [isPollingEnabled, setIsPollingEnabled] = useState(true);
+  const [optimisticPendingId, setOptimisticPendingId] = useState<string | null>(null);
   const [lastRefreshAt, setLastRefreshAt] = useState<Date | null>(null);
-  const pollingInterval = isPollingEnabled ? POLLING_INTERVAL_MS : 0;
+  const pollingInterval = isPollingEnabled && !optimisticPendingId ? POLLING_INTERVAL_MS : 0;
   const {
     data: workItems,
     error: listError,
@@ -188,8 +201,8 @@ export function WorkItemsReadOnly() {
   return (
     <Stack spacing={2}>
       <Alert severity="info" icon={<InfoOutlinedIcon />}>
-        Этап 6: polling обновляет данные с backend без ручного refresh. Optimistic update,
-        rollback и conflict/stale сценарии будут добавлены позже.
+        Этап 7: optimistic update сразу меняет UI, а backend error откатывает изменения.
+        Async commands и conflict/stale сценарии будут добавлены позже.
       </Alert>
 
       <Paper variant="outlined" sx={{ p: 2 }}>
@@ -212,7 +225,13 @@ export function WorkItemsReadOnly() {
             <Chip
               icon={<SyncIcon />}
               size="small"
-              label={isListFetching ? 'Polling refresh...' : `${POLLING_INTERVAL_MS / 1000}s interval`}
+              label={
+                optimisticPendingId
+                  ? 'Paused for optimistic update'
+                  : isListFetching
+                    ? 'Polling refresh...'
+                    : `${POLLING_INTERVAL_MS / 1000}s interval`
+              }
               color={isPollingEnabled ? 'primary' : 'default'}
               variant="outlined"
             />
@@ -264,6 +283,7 @@ export function WorkItemsReadOnly() {
             isFetching={isDetailsFetching}
             hasError={Boolean(detailsError)}
             isPollingEnabled={isPollingEnabled}
+            onOptimisticPendingChange={setOptimisticPendingId}
           />
         </Grid>
       </Grid>
@@ -334,20 +354,26 @@ function WorkItemDetails({
   isFetching,
   hasError,
   isPollingEnabled,
+  onOptimisticPendingChange,
 }: {
   workItem: WorkItem | null;
   isLoading: boolean;
   isFetching: boolean;
   hasError: boolean;
   isPollingEnabled: boolean;
+  onOptimisticPendingChange: (id: string | null) => void;
 }) {
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState<WorkItemDraft | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [updateWorkItem, { isLoading: isSaving }] = useUpdateWorkItemMutation();
+  const [updateWorkItemOptimistic, { isLoading: isOptimisticSaving }] =
+    useUpdateWorkItemOptimisticMutation();
   const [triggerExternalChange, { isLoading: isChangingExternally }] =
     useTriggerExternalChangeMutation();
+  const [triggerFailNextRequest, { isLoading: isArmingFailure }] =
+    useTriggerFailNextRequestMutation();
 
   useEffect(() => {
     if (workItem && !isEditing) {
@@ -403,32 +429,64 @@ function WorkItemDetails({
     setFormError(null);
   };
 
-  const saveDraft = async () => {
+  const saveDraft = async (mode: 'classic' | 'optimistic') => {
     const trimmedTitle = activeDraft.title.trim();
     if (!trimmedTitle) {
       setFormError('Title не должен быть пустым.');
       return;
     }
 
-    const changes: UpdateWorkItemRequest = {
-      title: trimmedTitle,
-      status: activeDraft.status,
-      priority: activeDraft.priority,
-      assignee: activeDraft.assignee.trim() || null,
-      tags: parseTags(activeDraft.tags),
-    };
+    const changes = toUpdateRequest({ ...activeDraft, title: trimmedTitle });
 
     try {
-      const saved = await updateWorkItem({ id: workItem.id, changes }).unwrap();
+      if (mode === 'optimistic') {
+        onOptimisticPendingChange(workItem.id);
+      }
+      const saved =
+        mode === 'optimistic'
+          ? await updateWorkItemOptimistic({ id: workItem.id, changes }).unwrap()
+          : await updateWorkItem({ id: workItem.id, changes }).unwrap();
       setDraft(toDraft(saved));
       setFormError(null);
-      setSuccessMessage('Изменения сохранены');
+      setSuccessMessage(
+        mode === 'optimistic'
+          ? 'Optimistic update подтверждён backend'
+          : 'Изменения сохранены'
+      );
       setIsEditing(false);
+    } catch (error) {
+      if (mode === 'optimistic') {
+        setDraft(toDraft(workItem));
+      }
+      setFormError(
+        getMutationErrorMessage(
+          error,
+          mode === 'optimistic'
+            ? 'Backend вернул ошибку, изменения откатились.'
+            : 'Не удалось сохранить изменения. Проверьте данные и повторите попытку.'
+        )
+      );
+    } finally {
+      if (mode === 'optimistic') {
+        onOptimisticPendingChange(null);
+      }
+    }
+  };
+
+  const armFailNextRequest = async () => {
+    setFormError(null);
+    setSuccessMessage(null);
+
+    try {
+      await triggerFailNextRequest().unwrap();
+      setSuccessMessage(
+        'Следующий PATCH будет завершён ошибкой DEV_FORCED_FAILURE. Нажмите optimistic save, чтобы увидеть rollback.'
+      );
     } catch (error) {
       setFormError(
         getMutationErrorMessage(
           error,
-          'Не удалось сохранить изменения. Проверьте данные и повторите попытку.'
+          'Не удалось включить fail-next-request. Проверьте backend и повторите попытку.'
         )
       );
     }
@@ -458,7 +516,7 @@ function WorkItemDetails({
   return (
     <Paper variant="outlined" sx={{ p: 2.5, height: '100%' }}>
       <Stack spacing={2}>
-        {isSaving ? <LinearProgress /> : null}
+        {isSaving || isOptimisticSaving ? <LinearProgress /> : null}
         {successMessage ? <Alert severity="success">{successMessage}</Alert> : null}
         {formError ? <Alert severity="error">{formError}</Alert> : null}
 
@@ -473,6 +531,9 @@ function WorkItemDetails({
             </Typography>
           </Stack>
           <Stack direction="row" spacing={1} flexWrap="wrap">
+            {isOptimisticSaving ? (
+              <Chip color="secondary" label="Ожидает подтверждения backend" />
+            ) : null}
             <Chip
               color={statusColor[workItem.status]}
               label={workItemStatusLabels[workItem.status]}
@@ -490,7 +551,7 @@ function WorkItemDetails({
         {isEditing ? (
           <WorkItemEditForm
             draft={activeDraft}
-            disabled={isSaving}
+            disabled={isSaving || isOptimisticSaving}
             titleError={titleError}
             onChange={updateDraft}
           />
@@ -501,13 +562,23 @@ function WorkItemDetails({
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} justifyContent="flex-end">
           {isEditing ? (
             <>
-              <Button variant="outlined" onClick={cancelEditing} disabled={isSaving}>
+              <Button variant="outlined" onClick={cancelEditing} disabled={isSaving || isOptimisticSaving}>
                 Отмена
               </Button>
               <Button
+                variant="outlined"
+                onClick={() => saveDraft('optimistic')}
+                disabled={isSaving || isOptimisticSaving || titleError}
+                startIcon={
+                  isOptimisticSaving ? <CircularProgress color="inherit" size={16} /> : <SyncIcon />
+                }
+              >
+                {isOptimisticSaving ? 'Ожидание...' : 'Сохранить optimistic'}
+              </Button>
+              <Button
                 variant="contained"
-                onClick={saveDraft}
-                disabled={isSaving || titleError}
+                onClick={() => saveDraft('classic')}
+                disabled={isSaving || isOptimisticSaving || titleError}
                 startIcon={isSaving ? <CircularProgress color="inherit" size={16} /> : undefined}
               >
                 {isSaving ? 'Сохранение...' : 'Сохранить'}
@@ -518,12 +589,20 @@ function WorkItemDetails({
               <Button
                 variant="outlined"
                 onClick={runExternalChange}
-                disabled={isChangingExternally}
+                disabled={isChangingExternally || isArmingFailure}
                 startIcon={
                   isChangingExternally ? <CircularProgress color="inherit" size={16} /> : <SyncIcon />
                 }
               >
                 {isChangingExternally ? 'Изменение...' : 'Имитировать внешнее изменение'}
+              </Button>
+              <Button
+                variant="outlined"
+                onClick={armFailNextRequest}
+                disabled={isChangingExternally || isArmingFailure}
+                startIcon={isArmingFailure ? <CircularProgress color="inherit" size={16} /> : undefined}
+              >
+                {isArmingFailure ? 'Готовлю ошибку...' : 'Следующее сохранение завершить ошибкой'}
               </Button>
               <Button variant="contained" onClick={startEditing}>
                 Редактировать
@@ -533,8 +612,9 @@ function WorkItemDetails({
         </Stack>
 
         <Alert severity="info">
-          Этап 6 uses regular polling. The demo action changes backend state externally;
-          the list and selected details refresh from backend data instead of local optimistic state.
+          Этап 7 adds optimistic save. The UI patches RTK Query cache immediately, pauses
+          polling while the optimistic request is pending, and rolls back the cache if backend
+          returns an error.
         </Alert>
       </Stack>
     </Paper>

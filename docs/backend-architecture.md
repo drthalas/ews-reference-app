@@ -2,7 +2,7 @@
 
 The backend is a Java 21 Spring Boot service named `ews-reference-backend`.
 
-Stage 6 includes the WorkItem runtime API, shared API error types, and a minimal local-only DEV helper for external-change demos.
+Stage 7 includes the WorkItem runtime API, shared API error types, and minimal local-only DEV helpers for external-change and rollback demos.
 
 ## Package Layout
 
@@ -42,6 +42,7 @@ Implemented main endpoints:
 Implemented DEV endpoints:
 
 - `POST /api/dev/work-items/{id}/external-change`
+- `POST /api/dev/fail-next-request`
 
 Planned later endpoints:
 
@@ -53,7 +54,6 @@ Planned DEV endpoints:
 - `GET /api/dev/settings`
 - `PUT /api/dev/settings`
 - `POST /api/dev/reset`
-- `POST /api/dev/fail-next-request`
 - `POST /api/dev/fail-next-command`
 - `POST /api/dev/trigger-stale-response`
 - `POST /api/dev/trigger-conflict`
@@ -67,6 +67,8 @@ Expected HTTP mappings:
 - `400`: invalid WorkItem PATCH field.
 - `404`: WorkItem not found.
 - `500`: internal error or explicit DEV failure simulation.
+
+`POST /api/dev/fail-next-request` arms one controlled `DEV_FORCED_FAILURE` response for the next WorkItem PATCH and then resets.
 
 ## Storage
 

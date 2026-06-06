@@ -2,7 +2,7 @@
 
 RTK Query is the default owner of server state.
 
-The current frontend has a shared `baseApi`, a health endpoint, WorkItem query endpoints, polling options, a server-confirmed WorkItem update mutation, and a minimal external-change demo mutation.
+The current frontend has a shared `baseApi`, a health endpoint, WorkItem query endpoints, polling options, a server-confirmed WorkItem update mutation, an optimistic WorkItem update mutation, and minimal DEV demo mutations.
 
 ## Rules
 
@@ -27,7 +27,9 @@ WorkItem endpoints use tags that support narrow invalidation:
 - `getWorkItems`: `GET /api/work-items`
 - `getWorkItem`: `GET /api/work-items/{id}`
 - `updateWorkItem`: `PATCH /api/work-items/{id}`
+- `updateWorkItemOptimistic`: `PATCH /api/work-items/{id}`
 - `triggerExternalChange`: `POST /api/dev/work-items/{id}/external-change`
+- `triggerFailNextRequest`: `POST /api/dev/fail-next-request`
 
 ## Planned Command Endpoints
 
@@ -36,10 +38,12 @@ WorkItem endpoints use tags that support narrow invalidation:
 
 ## Cache And Reconciliation
 
-WorkItem list, detail, server-confirmed update, and external-change demo flows are modeled through RTK Query endpoints. Command status queries and prefetch flows should also be modeled through RTK Query when their stages begin.
+WorkItem list, detail, server-confirmed update, optimistic update, external-change demo, and fail-next-request demo flows are modeled through RTK Query endpoints. Command status queries and prefetch flows should also be modeled through RTK Query when their stages begin.
 
 Successful server-confirmed updates invalidate the relevant item and list tags so active list/detail queries refetch server-confirmed data. Optimistic updates should use RTK Query cache patching and define rollback behavior before implementation.
 
 Stage 6 polling is configured at hook usage with a 3000 ms interval when enabled and `0` when disabled. Selected details prefer the item from the polled list cache when available, with the detail query as fallback.
+
+Stage 7 optimistic update uses `onQueryStarted` and `updateQueryData` to patch both `getWorkItems` and `getWorkItem`. On success, both caches are replaced with the server-confirmed WorkItem. On error, both patches are undone. The UI pauses polling while an optimistic save is pending.
 
 Stale responses should not overwrite a newer known WorkItem revision once the conflict/stale stage adds explicit stale response handling.

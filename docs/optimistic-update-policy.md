@@ -1,6 +1,6 @@
 # Optimistic Update Policy
 
-Optimistic update is planned for a later stage and is not implemented in the scaffold.
+Optimistic update is implemented for WorkItem PATCH in Stage 7.
 
 ## Goals
 
@@ -12,17 +12,19 @@ Optimistic update is planned for a later stage and is not implemented in the sca
 
 ## First Scope
 
-Optimistic flows should be limited to narrow WorkItem fields first:
+The Stage 7 optimistic flow uses the same edit form as the server-confirmed update path and supports:
 
+- `title`
 - `status`
 - `priority`
 - `assignee`
+- `tags`
 
-Title and description can stay server-confirmed until the simpler fields are proven.
+The classic server-confirmed save path remains available separately and does not patch cache before the backend response.
 
 ## Request Contract
 
-Optimistic mutations should send the current known `expectedRevision`. The backend decides whether the update is accepted. The frontend must not invent final revision values.
+The current PATCH contract does not send `expectedRevision`; conflict handling is deferred to the conflict stage. The frontend must not invent final revision values. The optimistic patch changes editable display fields only and keeps the current `revision` and `updatedAt` until the backend confirms.
 
 ## Success Behavior
 
@@ -30,11 +32,21 @@ On success, replace the optimistic item with the server-confirmed WorkItem. The 
 
 ## Rollback Behavior
 
-On validation or server failure, undo the RTK Query cache patch and show an error state tied to the affected WorkItem.
+On validation or server failure, undo the RTK Query cache patches for both `getWorkItems` and `getWorkItem`, reset the edit draft to the server-confirmed item from before the optimistic save, and show an error state tied to the affected WorkItem.
+
+Stage 7 includes a minimal DEV endpoint for rollback demos:
+
+- `POST /api/dev/fail-next-request`: arms a one-shot failure for the next WorkItem PATCH.
+
+The forced failure returns `500` with `DEV_FORCED_FAILURE` and then resets, so the next PATCH behaves normally.
 
 ## Conflict Behavior
 
-On revision conflict, undo the optimistic patch, show a conflict state, and request the current server item. The user should be able to review the server-confirmed state before retrying.
+Conflict handling is planned for a later stage. When revision conflict support is added, the optimistic patch should be undone, a conflict state should be shown, and the current server item should be requested.
+
+## Polling Interaction
+
+Stage 7 pauses WorkItem polling while an optimistic save is pending. This avoids the obvious UX bug where ordinary polling immediately overwrites the optimistic cache patch before the backend response. Full stale response handling remains deferred to the conflict/stale stage.
 
 ## Constraints
 

@@ -15,9 +15,10 @@ EWS Reference App is a local reference app for demonstrating frontend-backend in
 - Stage 5 is done: server-confirmed WorkItem update.
 - Stage 6 is done: polling and external data changes.
 - Stage 6.5 is done: Railway demo-deploy preparation for separate frontend and backend services.
-- Stage 7 is next: optimistic update and rollback.
+- Stage 7 is done: optimistic update and rollback.
+- Stage 8 is next: async command flow.
 
-Stage 6 implements WorkItem polling through RTK Query and a minimal `/api/dev/work-items/{id}/external-change` endpoint for deterministic external-change demos. Stage 6.5 prepares Railway deployment docs and Docker/runtime compatibility; actual Railway services still need to be created or connected manually unless Railway CLI is available and authorized. Optimistic updates, rollback, async commands, conflict flows, stale response simulation, and full DEV controls remain out of scope until later stages.
+Stage 7 implements an optimistic WorkItem save path through RTK Query cache patching and rollback on backend error. A minimal `/api/dev/fail-next-request` endpoint triggers one forced PATCH failure for rollback demos. Async commands, conflict flows, stale response simulation, and full DEV controls remain out of scope until later stages.
 
 ## Repository Shape
 
@@ -57,6 +58,7 @@ Implemented main endpoints:
 Implemented DEV endpoints:
 
 - `POST /api/dev/work-items/{id}/external-change`
+- `POST /api/dev/fail-next-request`
 
 Planned later endpoints:
 
@@ -68,7 +70,6 @@ Planned DEV endpoints:
 - `GET /api/dev/settings`
 - `PUT /api/dev/settings`
 - `POST /api/dev/reset`
-- `POST /api/dev/fail-next-request`
 - `POST /api/dev/fail-next-command`
 - `POST /api/dev/trigger-stale-response`
 - `POST /api/dev/trigger-conflict`

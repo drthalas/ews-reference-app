@@ -1,5 +1,7 @@
 package com.ewsreference.app.workitem.service;
 
+import com.ewsreference.app.devtools.service.DevFailureService;
+import com.ewsreference.app.devtools.service.DevForcedFailureException;
 import com.ewsreference.app.workitem.api.UpdateWorkItemRequest;
 import com.ewsreference.app.workitem.domain.WorkItem;
 import com.ewsreference.app.workitem.domain.WorkItemPriority;
@@ -20,15 +22,21 @@ public class WorkItemService {
 
     private final WorkItemRepository repository;
     private final Clock clock;
+    private final DevFailureService devFailureService;
 
     @Autowired
-    public WorkItemService(WorkItemRepository repository) {
-        this(repository, Clock.systemUTC());
+    public WorkItemService(WorkItemRepository repository, DevFailureService devFailureService) {
+        this(repository, Clock.systemUTC(), devFailureService);
     }
 
     WorkItemService(WorkItemRepository repository, Clock clock) {
+        this(repository, clock, new DevFailureService());
+    }
+
+    WorkItemService(WorkItemRepository repository, Clock clock, DevFailureService devFailureService) {
         this.repository = repository;
         this.clock = clock;
+        this.devFailureService = devFailureService;
     }
 
     public List<WorkItem> list() {
@@ -41,6 +49,10 @@ public class WorkItemService {
     }
 
     public WorkItem update(String id, UpdateWorkItemRequest request) {
+        if (devFailureService.consumeFailNextPatch()) {
+            throw new DevForcedFailureException(id);
+        }
+
         WorkItem current = get(id);
         WorkItem candidate = applyPatch(current, request);
 
