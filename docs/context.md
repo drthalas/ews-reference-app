@@ -13,9 +13,10 @@ EWS Reference App is a local reference app for demonstrating frontend-backend in
 - Stage 3 is done: minimal backend WorkItem API.
 - Stage 4 is done: frontend RTK Query read-only integration.
 - Stage 5 is done: server-confirmed WorkItem update.
-- Stage 6 is next: polling and external data changes.
+- Stage 6 is done: polling and external data changes.
+- Stage 7 is next: optimistic update and rollback.
 
-Stage 5 implements classic WorkItem editing through PATCH UI. The frontend waits for the backend response before showing saved data. Polling, optimistic updates, async commands, conflict flows, and DEV controls remain out of scope until later stages.
+Stage 6 implements WorkItem polling through RTK Query and a minimal `/api/dev/work-items/{id}/external-change` endpoint for deterministic external-change demos. Optimistic updates, rollback, async commands, conflict flows, stale response simulation, and full DEV controls remain out of scope until later stages.
 
 ## Repository Shape
 
@@ -50,6 +51,10 @@ Implemented main endpoints:
 - `GET /api/work-items/{id}`
 - `PATCH /api/work-items/{id}`
 
+Implemented DEV endpoints:
+
+- `POST /api/dev/work-items/{id}/external-change`
+
 Planned later endpoints:
 
 - `POST /api/work-items/{id}/commands`
@@ -60,7 +65,6 @@ Planned DEV endpoints:
 - `GET /api/dev/settings`
 - `PUT /api/dev/settings`
 - `POST /api/dev/reset`
-- `POST /api/dev/work-items/{id}/external-change`
 - `POST /api/dev/fail-next-request`
 - `POST /api/dev/fail-next-command`
 - `POST /api/dev/trigger-stale-response`

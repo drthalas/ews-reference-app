@@ -7,8 +7,8 @@
 3. Backend WorkItem API - done.
 4. Frontend RTK Query integration - done.
 5. Server-confirmed update - done.
-6. Polling - next.
-7. Optimistic update - planned.
+6. Polling - done.
+7. Optimistic update - next.
 8. Async command flow - planned.
 9. DEV panel - planned.
 10. Conflict and stale scenarios - planned.
@@ -74,11 +74,17 @@ Completed implementation stage:
 
 ### 6. Polling
 
-Next stage: add periodic WorkItem refresh and stale response protection.
+Completed implementation stage:
+
+- added 3000 ms polling for WorkItem list data
+- added visible polling on/off control and last refresh state
+- added a minimal external-change demo action in the WorkItem details panel
+- added `POST /api/dev/work-items/{id}/external-change`
+- kept stale response protection and full DEV panel behavior out of scope
 
 ### 7. Optimistic Update
 
-Add narrow optimistic updates with rollback, conflict handling, and server reconciliation.
+Next stage: add narrow optimistic updates with rollback and failed-change feedback.
 
 ### 8. Async Command Flow
 

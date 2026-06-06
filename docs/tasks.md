@@ -11,7 +11,8 @@ This file is the compact execution map for future work.
 | 3. Backend WorkItem API | Done | In-memory domain model, list/detail/update endpoints, validation, errors, and tests. |
 | 4. Frontend RTK Query integration | Done | WorkItem models, feature API bindings, generated hooks, list rendering, and read-only detail panel. |
 | 5. Server-confirmed update | Done | PATCH UI, saving state, success/error feedback, and RTK Query cache invalidation. |
-| 6. Polling | Next | Polling controls, interval refresh, external-change support, and visual polling state. |
+| 6. Polling | Done | Polling controls, interval refresh, external-change support, and visual polling state. |
+| 7. Optimistic update | Next | Optimistic mutation, pending state, rollback, and failed-change feedback. |
 
 ## Execution Order
 
@@ -21,7 +22,7 @@ This file is the compact execution map for future work.
 4. Add backend tests for list, detail, patch, validation, and errors.
 5. Add frontend WorkItem RTK Query endpoints and typed models.
 6. Add compact WorkItem list UI and server-confirmed edit flow.
-7. Add polling with stale response protection.
+7. Add polling controls and external-change demo support.
 8. Add optimistic update flow with rollback and reconciliation.
 9. Add async command flow with command status lookup.
 10. Add DEV settings and simulation endpoints.
@@ -57,6 +58,16 @@ This file is the compact execution map for future work.
 - Added success and error feedback without discarding unsaved user input on errors.
 - Invalidated WorkItem list and selected detail cache entries after successful mutation.
 - Kept optimistic update, polling, async commands, DEV panel, and conflict scenarios out of scope.
+
+## Completed Stage 6 Checklist
+
+- Added `POST /api/dev/work-items/{id}/external-change` as a minimal local demo helper.
+- Reused WorkItem service logic for deterministic external changes, revision increment, and `updatedAt` refresh.
+- Added backend coverage for unknown ids, deterministic update behavior, revision increment, and timestamp update.
+- Added a `triggerExternalChange` RTK Query mutation for the demo endpoint.
+- Added WorkItem polling controls with a 3000 ms interval and visible polling status.
+- Added last refresh display, manual refresh, and external-change feedback.
+- Kept optimistic update, rollback, async commands, full DEV panel, and conflict/stale scenarios out of scope.
 
 ## Future Implementation Guardrails
 

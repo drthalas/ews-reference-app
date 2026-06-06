@@ -33,8 +33,18 @@ export const workItemsApi = baseApi.injectEndpoints({
         { type: 'WorkItem', id: 'LIST' },
       ],
     }),
+    triggerExternalChange: builder.mutation<WorkItem, string>({
+      query: (id) => ({
+        url: `/dev/work-items/${id}/external-change`,
+        method: 'POST',
+      }),
+    }),
   }),
 });
 
-export const { useGetWorkItemQuery, useGetWorkItemsQuery, useUpdateWorkItemMutation } =
-  workItemsApi;
+export const {
+  useGetWorkItemQuery,
+  useGetWorkItemsQuery,
+  useTriggerExternalChangeMutation,
+  useUpdateWorkItemMutation,
+} = workItemsApi;

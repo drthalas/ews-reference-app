@@ -61,6 +61,29 @@ public class WorkItemService {
         return repository.save(updated);
     }
 
+    public WorkItem applyExternalChange(String id) {
+        WorkItem current = get(id);
+        WorkItemStatus nextStatus = current.status() == WorkItemStatus.BLOCKED
+                ? WorkItemStatus.IN_PROGRESS
+                : WorkItemStatus.BLOCKED;
+        List<String> tags = new ArrayList<>(current.tags());
+        if (!tags.contains("external-change")) {
+            tags.add("external-change");
+        }
+
+        WorkItem updated = new WorkItem(
+                current.id(),
+                current.title(),
+                nextStatus,
+                current.priority(),
+                current.assignee(),
+                tags,
+                current.revision() + 1,
+                Instant.now(clock)
+        );
+        return repository.save(updated);
+    }
+
     private WorkItem applyPatch(WorkItem current, UpdateWorkItemRequest request) {
         if (request == null) {
             return current;

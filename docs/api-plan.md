@@ -111,12 +111,27 @@ Command status values should start with `pending`, `completed`, and `failed`.
 
 ## DEV Endpoints
 
-DEV endpoints are planned under `/api/dev` and are only for local scenario simulation.
+DEV endpoints live under `/api/dev` and are only for local scenario simulation.
+
+### `POST /api/dev/work-items/{id}/external-change`
+
+Implemented. Simulates a deterministic external WorkItem update for polling demos.
+
+Behavior:
+
+- unknown ids return `404` with `WORK_ITEM_NOT_FOUND`;
+- if the current status is not `blocked`, status changes to `blocked`;
+- if the current status is `blocked`, status changes to `in_progress`;
+- tag `external-change` is added if it is not already present;
+- `revision` increments by 1;
+- `updatedAt` is refreshed;
+- the updated WorkItem is returned.
+
+Planned later DEV endpoints:
 
 - `GET /api/dev/settings`: returns active simulation settings.
 - `PUT /api/dev/settings`: replaces simulation settings such as latency and automatic failure flags.
 - `POST /api/dev/reset`: resets in-memory demo data and settings.
-- `POST /api/dev/work-items/{id}/external-change`: mutates server state to simulate another actor.
 - `POST /api/dev/fail-next-request`: makes the next normal request fail.
 - `POST /api/dev/fail-next-command`: makes the next async command fail.
 - `POST /api/dev/trigger-stale-response`: returns an older revision on the next eligible request.

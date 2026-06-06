@@ -2,6 +2,7 @@ import AssignmentTurnedInIcon from '@mui/icons-material/AssignmentTurnedIn';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import RefreshIcon from '@mui/icons-material/Refresh';
+import SyncIcon from '@mui/icons-material/Sync';
 import {
   Alert,
   Box,
@@ -9,6 +10,7 @@ import {
   Chip,
   CircularProgress,
   Divider,
+  FormControlLabel,
   FormControl,
   Grid,
   InputLabel,
@@ -20,6 +22,7 @@ import {
   Paper,
   Select,
   Stack,
+  Switch,
   TextField,
   Typography,
 } from '@mui/material';
@@ -28,6 +31,7 @@ import { useEffect, useMemo, useState } from 'react';
 import {
   useGetWorkItemQuery,
   useGetWorkItemsQuery,
+  useTriggerExternalChangeMutation,
   useUpdateWorkItemMutation,
 } from '../api/workItemsApi';
 import {
@@ -50,6 +54,8 @@ type WorkItemDraft = {
   tags: string;
 };
 
+const POLLING_INTERVAL_MS = 3000;
+
 const statusColor: Record<WorkItemStatus, 'default' | 'info' | 'success' | 'warning'> = {
   new: 'default',
   in_progress: 'info',
@@ -64,7 +70,7 @@ const priorityColor: Record<WorkItemPriority, 'default' | 'error' | 'info' | 'wa
   critical: 'error',
 };
 
-function formatDate(value: string) {
+function formatDate(value: string | Date) {
   return new Intl.DateTimeFormat(undefined, {
     dateStyle: 'medium',
     timeStyle: 'short',
@@ -88,7 +94,7 @@ function parseTags(value: string) {
     .filter(Boolean);
 }
 
-function getMutationErrorMessage(error: unknown) {
+function getMutationErrorMessage(error: unknown, fallback: string) {
   if (typeof error === 'object' && error && 'data' in error) {
     const data = (error as { data?: ApiError }).data;
     if (data?.message || data?.code) {
@@ -96,24 +102,33 @@ function getMutationErrorMessage(error: unknown) {
     }
   }
 
-  return 'Не удалось сохранить изменения. Проверьте данные и повторите попытку.';
+  return fallback;
 }
 
 export function WorkItemsReadOnly() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [isPollingEnabled, setIsPollingEnabled] = useState(true);
+  const [lastRefreshAt, setLastRefreshAt] = useState<Date | null>(null);
+  const pollingInterval = isPollingEnabled ? POLLING_INTERVAL_MS : 0;
   const {
     data: workItems,
     error: listError,
     isLoading: isListLoading,
     isFetching: isListFetching,
     refetch,
-  } = useGetWorkItemsQuery();
+  } = useGetWorkItemsQuery(undefined, { pollingInterval });
 
   useEffect(() => {
     if (!selectedId && workItems?.length) {
       setSelectedId(workItems[0].id);
     }
   }, [selectedId, workItems]);
+
+  useEffect(() => {
+    if (workItems) {
+      setLastRefreshAt(new Date());
+    }
+  }, [workItems]);
 
   const selectedFromList = useMemo(
     () => workItems?.find((workItem) => workItem.id === selectedId) ?? null,
@@ -125,9 +140,9 @@ export function WorkItemsReadOnly() {
     error: detailsError,
     isLoading: isDetailsLoading,
     isFetching: isDetailsFetching,
-  } = useGetWorkItemQuery(selectedId ?? skipToken);
+  } = useGetWorkItemQuery(selectedId ?? skipToken, { pollingInterval });
 
-  const selectedWorkItem = selectedDetails ?? selectedFromList;
+  const selectedWorkItem = selectedFromList ?? selectedDetails ?? null;
 
   if (isListLoading) {
     return (
@@ -173,9 +188,45 @@ export function WorkItemsReadOnly() {
   return (
     <Stack spacing={2}>
       <Alert severity="info" icon={<InfoOutlinedIcon />}>
-        Этап 5: обычное server-confirmed обновление. Changes are applied only after
-        the backend responds; optimistic update will be added later.
+        Этап 6: polling обновляет данные с backend без ручного refresh. Optimistic update,
+        rollback и conflict/stale сценарии будут добавлены позже.
       </Alert>
+
+      <Paper variant="outlined" sx={{ p: 2 }}>
+        <Stack
+          direction={{ xs: 'column', sm: 'row' }}
+          spacing={1.5}
+          justifyContent="space-between"
+          alignItems={{ xs: 'flex-start', sm: 'center' }}
+        >
+          <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap">
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={isPollingEnabled}
+                  onChange={(event) => setIsPollingEnabled(event.target.checked)}
+                />
+              }
+              label={isPollingEnabled ? 'Polling: включён' : 'Polling: выключен'}
+            />
+            <Chip
+              icon={<SyncIcon />}
+              size="small"
+              label={isListFetching ? 'Polling refresh...' : `${POLLING_INTERVAL_MS / 1000}s interval`}
+              color={isPollingEnabled ? 'primary' : 'default'}
+              variant="outlined"
+            />
+          </Stack>
+          <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
+            <Typography variant="body2" color="text.secondary">
+              Last refresh: {lastRefreshAt ? formatDate(lastRefreshAt) : 'not yet'}
+            </Typography>
+            <Button size="small" startIcon={<RefreshIcon />} onClick={() => refetch()}>
+              Refresh
+            </Button>
+          </Stack>
+        </Stack>
+      </Paper>
 
       <Grid container spacing={2.5} alignItems="stretch">
         <Grid item xs={12} md={5}>
@@ -212,6 +263,7 @@ export function WorkItemsReadOnly() {
             isLoading={isDetailsLoading}
             isFetching={isDetailsFetching}
             hasError={Boolean(detailsError)}
+            isPollingEnabled={isPollingEnabled}
           />
         </Grid>
       </Grid>
@@ -281,17 +333,21 @@ function WorkItemDetails({
   isLoading,
   isFetching,
   hasError,
+  isPollingEnabled,
 }: {
   workItem: WorkItem | null;
   isLoading: boolean;
   isFetching: boolean;
   hasError: boolean;
+  isPollingEnabled: boolean;
 }) {
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState<WorkItemDraft | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [updateWorkItem, { isLoading: isSaving }] = useUpdateWorkItemMutation();
+  const [triggerExternalChange, { isLoading: isChangingExternally }] =
+    useTriggerExternalChangeMutation();
 
   useEffect(() => {
     if (workItem && !isEditing) {
@@ -369,7 +425,33 @@ function WorkItemDetails({
       setSuccessMessage('Изменения сохранены');
       setIsEditing(false);
     } catch (error) {
-      setFormError(getMutationErrorMessage(error));
+      setFormError(
+        getMutationErrorMessage(
+          error,
+          'Не удалось сохранить изменения. Проверьте данные и повторите попытку.'
+        )
+      );
+    }
+  };
+
+  const runExternalChange = async () => {
+    setFormError(null);
+    setSuccessMessage(null);
+
+    try {
+      await triggerExternalChange(workItem.id).unwrap();
+      setSuccessMessage(
+        isPollingEnabled
+          ? 'Внешнее изменение выполнено. Polling подтянет обновлённые данные с backend.'
+          : 'Внешнее изменение выполнено. Включите polling или нажмите Refresh, чтобы подтянуть данные.'
+      );
+    } catch (error) {
+      setFormError(
+        getMutationErrorMessage(
+          error,
+          'Не удалось выполнить внешнее изменение. Проверьте backend и повторите попытку.'
+        )
+      );
     }
   };
 
@@ -432,15 +514,27 @@ function WorkItemDetails({
               </Button>
             </>
           ) : (
-            <Button variant="contained" onClick={startEditing}>
-              Редактировать
-            </Button>
+            <>
+              <Button
+                variant="outlined"
+                onClick={runExternalChange}
+                disabled={isChangingExternally}
+                startIcon={
+                  isChangingExternally ? <CircularProgress color="inherit" size={16} /> : <SyncIcon />
+                }
+              >
+                {isChangingExternally ? 'Изменение...' : 'Имитировать внешнее изменение'}
+              </Button>
+              <Button variant="contained" onClick={startEditing}>
+                Редактировать
+              </Button>
+            </>
           )}
         </Stack>
 
         <Alert severity="info">
-          Этап 5 uses server-confirmed updates. The UI waits for the backend response before
-          showing saved data; optimistic update is planned later.
+          Этап 6 uses regular polling. The demo action changes backend state externally;
+          the list and selected details refresh from backend data instead of local optimistic state.
         </Alert>
       </Stack>
     </Paper>

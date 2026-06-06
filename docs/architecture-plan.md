@@ -4,9 +4,9 @@ EWS Reference App demonstrates frontend-backend interaction patterns in an EWS-l
 
 ## Stage Position
 
-Stage 1 is complete and provides the scaffold. Stage 2 is complete and provides documentation and planning context. Stage 3 is complete and provides the first runtime WorkItem API. Stage 4 will add frontend RTK Query integration.
+Stages 1 through 6 are complete. The project now has the scaffold, architecture documentation, the backend WorkItem API, frontend RTK Query integration, server-confirmed editing, polling, and a minimal external-change demo.
 
-Stage 3 implements only backend WorkItem list, detail, and patch endpoints. Polling, optimistic updates, async commands, DEV controls, conflict simulation, prefetch behavior, and frontend WorkItem UI remain planned for later stages.
+Stage 7 will add optimistic update and rollback. Async commands, full DEV controls, conflict/stale simulation, prefetch behavior, and broader test coverage remain planned for later stages.
 
 ## Monorepo Layout
 
@@ -42,7 +42,7 @@ Storage will remain in memory to keep the app reproducible and focused on refere
 
 ## API Boundary
 
-Implemented main API endpoints live under `/api/work-items`. Future command endpoints are planned under `/api/commands`. DEV endpoints are planned under `/api/dev` and must stay separated from normal domain behavior.
+Implemented main API endpoints live under `/api/work-items`. Future command endpoints are planned under `/api/commands`. DEV endpoints live under `/api/dev` and must stay separated from normal domain behavior.
 
 The canonical error model for domain endpoints is `ApiError(status, code, message, details, timestamp)`.
 

@@ -2,7 +2,7 @@
 
 The frontend is a Vite React application written in TypeScript.
 
-Stage 5 adds classic server-confirmed WorkItem editing through RTK Query while keeping the application shell and health query visible.
+Stage 6 adds WorkItem polling and a minimal external-change demo through RTK Query while keeping the application shell and health query visible.
 
 ## Layers
 
@@ -19,8 +19,10 @@ WorkItem server state belongs in `features/workItems/api`. Current typed endpoin
 - list retrieval
 - detail retrieval
 - server-confirmed patch updates
+- external-change demo mutation
+- polling options for active WorkItem queries
 
-Later stages will add async command submission, command status lookup, polling behavior, and DEV endpoint calls when those controls are introduced.
+Later stages will add optimistic cache updates, async command submission, command status lookup, broader DEV controls, and conflict/stale handling.
 
 ## UI State
 
@@ -44,12 +46,15 @@ The WorkItem feature is compact and operational:
 - loading, error, and empty states are visible
 - edit mode supports title, status, priority, assignee, and tags
 - save waits for backend confirmation before leaving edit mode
+- polling can be toggled on or off with a 3000 ms interval
+- selected details prefer the polled list item when present, so external changes become visible without manual refresh
+- the external-change demo button calls the backend `/api/dev` helper and does not create optimistic local data
 
-Later stages will add prefetch, conflict state, polling state, optimistic update, and async command behavior.
+Later stages will add prefetch, conflict state, optimistic update, rollback, and async command behavior.
 
 ## Stale Response Protection
 
-The frontend must compare incoming WorkItem revisions with the newest revision already known for each item. Older responses should be ignored for entity replacement and may still be surfaced as a demo event in DEV scenarios.
+Stage 6 displays WorkItem revisions and update timestamps. Full stale response protection is planned for the conflict/stale stage, where the frontend must compare incoming revisions with the newest revision already known for each item.
 
 ## Styling
 
@@ -57,4 +62,4 @@ MUI provides layout, typography, controls, and theme configuration. Components s
 
 ## Module Boundary
 
-The `workItems` frontend feature contains WorkItem API bindings, list UI, detail UI, and classic edit controls. Shared API transport stays in `shared/api/baseApi.ts`; domain-specific DTOs stay in the feature module.
+The `workItems` frontend feature contains WorkItem API bindings, list UI, detail UI, classic edit controls, polling controls, and the minimal external-change demo action. Shared API transport stays in `shared/api/baseApi.ts`; domain-specific DTOs stay in the feature module.

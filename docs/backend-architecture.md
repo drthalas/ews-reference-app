@@ -2,7 +2,7 @@
 
 The backend is a Java 21 Spring Boot service named `ews-reference-backend`.
 
-Stage 3 implements the first backend WorkItem runtime API alongside the health endpoint and shared API error types.
+Stage 6 includes the WorkItem runtime API, shared API error types, and a minimal local-only DEV helper for external-change demos.
 
 ## Package Layout
 
@@ -10,7 +10,7 @@ Stage 3 implements the first backend WorkItem runtime API alongside the health e
 - `health` contains the health endpoint.
 - `common.api` contains shared API DTOs.
 - `workitem` contains the WorkItem domain API.
-- Future `dev` will contain local-only simulation endpoints.
+- `devtools` contains local-only simulation endpoints.
 
 ## WorkItem Module
 
@@ -39,6 +39,10 @@ Implemented main endpoints:
 - `GET /api/work-items/{id}`
 - `PATCH /api/work-items/{id}`
 
+Implemented DEV endpoints:
+
+- `POST /api/dev/work-items/{id}/external-change`
+
 Planned later endpoints:
 
 - `POST /api/work-items/{id}/commands`
@@ -49,7 +53,6 @@ Planned DEV endpoints:
 - `GET /api/dev/settings`
 - `PUT /api/dev/settings`
 - `POST /api/dev/reset`
-- `POST /api/dev/work-items/{id}/external-change`
 - `POST /api/dev/fail-next-request`
 - `POST /api/dev/fail-next-command`
 - `POST /api/dev/trigger-stale-response`
@@ -69,7 +72,7 @@ Expected HTTP mappings:
 
 WorkItem data is stored in memory. This keeps local demos deterministic and avoids database setup.
 
-The in-memory repository should expose reset and external-change hooks for DEV scenarios, while normal domain services should use the same repository through explicit service methods.
+The in-memory repository is accessed through explicit service methods. The external-change helper reuses `WorkItemService` so revision and timestamp handling stays consistent with normal server-side updates.
 
 ## Documentation
 
