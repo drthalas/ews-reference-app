@@ -16,7 +16,8 @@ This file is the compact execution map for future work.
 | 7. Optimistic update | Done | Optimistic mutation, pending state, rollback, and failed-change feedback. |
 | 8. Async command flow | Done | Command submission, operation status, delayed completion, and pending operation UI. |
 | 9. DEV panel | Done | Local controls for delays, failures, reset, external change, stale response, and conflict demos. |
-| 10. Conflict and stale scenarios | Next | Deterministic conflict handling and stale response protection. |
+| 10. Conflict and stale scenarios | Done | Deterministic conflict handling, reload/cancel conflict UI, and stale response protection. |
+| 11. Prefetch and UX polish | Next | Detail prefetch, improved state badges/logs, responsive polish, and UX refinements. |
 
 ## Execution Order
 
@@ -124,6 +125,20 @@ This file is the compact execution map for future work.
 - Added `features/devPanel` frontend module with RTK Query endpoints and a right-side MUI DEV drawer.
 - Moved DEV controls out of the normal WorkItem details actions into the DEV panel.
 - Kept full conflict resolution UI and stale response protection out of scope for Stage 10.
+
+## Completed Stage 10 Checklist
+
+- Added `serverWorkItem` fields to `DEV_CONFLICT` error details so the frontend can show server-side revision context.
+- Added backend coverage for useful conflict details, one-shot conflict behavior, list/detail stale reads, and reset clearing conflict/stale triggers.
+- Added WorkItem stale-response events as UI-only Redux state.
+- Added revision-aware RTK Query merge policy for WorkItem list and detail caches.
+- Ignored incoming WorkItem responses when `incoming.revision < cached.revision`.
+- Compared detail responses against both detail cache and list cache, and compared list responses against known detail cache when available.
+- Cleared RTK Query cache after successful DEV reset so deterministic seed data can replace newer cached revisions.
+- Added conflict-specific UI for classic and optimistic saves that receive `409 DEV_CONFLICT`.
+- Added conflict actions: `Обновить с backend` and `Отменить редактирование`.
+- Added stale ignored badge/log in the WorkItem screen and selected details.
+- Kept merge/compare editor, force overwrite, real-time collaboration, WebSocket, auth, Redis, and external DB out of scope.
 
 ## Future Implementation Guardrails
 

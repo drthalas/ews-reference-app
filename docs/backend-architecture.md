@@ -2,7 +2,7 @@
 
 The backend is a Java 21 Spring Boot service named `ews-reference-backend`.
 
-Stage 9 includes the WorkItem runtime API, shared API error types, local-only DEV controls, and an in-memory async command flow.
+Stage 10 includes the WorkItem runtime API, shared API error types, local-only DEV controls, conflict details, stale response simulation, and an in-memory async command flow.
 
 ## Package Layout
 
@@ -65,11 +65,11 @@ Expected HTTP mappings:
 
 `POST /api/dev/fail-next-request` arms one controlled `DEV_FORCED_FAILURE` response for the next WorkItem PATCH and then resets.
 
-`POST /api/dev/trigger-conflict` arms one controlled `409 DEV_CONFLICT` response for the next WorkItem PATCH and then resets. The response includes `workItemId`, `clientRevision`, and `serverRevision` details for Stage 10 conflict UI work.
+`POST /api/dev/trigger-conflict` arms one controlled `409 DEV_CONFLICT` response for the next WorkItem PATCH and then resets. The response includes `workItemId`, `clientRevision`, `serverRevision`, and `serverWorkItem` details for conflict UI work.
 
 `POST /api/dev/fail-next-command` lets the next accepted async command complete as `failed`; the WorkItem `pendingOperation` is cleared and the WorkItem status is not changed to `done`.
 
-`POST /api/dev/trigger-stale-response` makes the next eligible WorkItem list/detail read return a controlled older revision. Full stale response protection remains planned for Stage 10.
+`POST /api/dev/trigger-stale-response` makes the next eligible WorkItem list/detail read return a controlled older revision. The frontend ignores stale WorkItem responses by comparing revisions.
 
 `GET /api/commands/{operationId}` returns `404 COMMAND_NOT_FOUND` for unknown operation ids.
 

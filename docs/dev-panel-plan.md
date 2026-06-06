@@ -63,6 +63,14 @@ It is visually separated from normal WorkItem UI and is not required for normal 
 
 DEV actions may mutate in-memory state and simulation flags. They must not change the main API contract or require external infrastructure.
 
-## Stage 10 Boundary
+## Stage 10 Integration
 
-Stage 9 provides backend controls and basic normal-flow error display. Full conflict resolution UI, stale polling response protection, compare/merge behavior, and state logs remain part of Stage 10.
+Stage 9 provides backend controls and basic normal-flow error display. Stage 10 wires conflict and stale controls into user-facing behavior:
+
+- trigger conflict makes the next save show conflict UI;
+- reload from backend refetches selected WorkItem/list data and exits edit mode;
+- cancel editing clears the draft and conflict state;
+- trigger stale response makes the next stale list/detail response get ignored by revision-aware cache merge;
+- stale ignored state is visible in the WorkItem screen.
+
+Compare/merge editing and force overwrite remain out of scope.

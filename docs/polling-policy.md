@@ -18,9 +18,7 @@ The first polling implementation targets `GET /api/work-items` with a 3000 ms in
 
 ## Revision Rules
 
-Each WorkItem response includes `revision`. Stage 6 displays revisions and server update timestamps. Explicit stale-response protection is deferred until the conflict/stale stage.
-
-Future stale-response handling should keep the highest accepted revision per item. A polling response with an older item revision must not replace the current cached item.
+Each WorkItem response includes `revision`. Stage 10 keeps the freshest accepted revision per item. A polling response with an older item revision does not replace the current cached item.
 
 ## UI Rules
 
@@ -33,7 +31,7 @@ The UI should distinguish:
 
 Polling should not hide an active optimistic update, pending command, or conflict message.
 
-Stage 7 pauses polling while an optimistic WorkItem save is pending. This is a narrow protection against ordinary polling visually overwriting optimistic cache patches before the backend response. Full stale response detection remains planned for the conflict/stale stage.
+Stage 7 pauses polling while an optimistic WorkItem save is pending. This is a narrow protection against ordinary polling visually overwriting optimistic cache patches before the backend response. Stage 10 adds explicit stale response detection and ignored stale response feedback.
 
 Stage 8 uses WorkItem polling to bring in final async command state after delayed backend completion. Command status is also polled separately through `GET /api/commands/{operationId}` while an operation is pending.
 
@@ -52,4 +50,4 @@ Implemented in Stage 9:
 - `GET /api/dev/settings` and `PUT /api/dev/settings`: expose response delay and stale-response mode controls.
 - `POST /api/dev/trigger-stale-response`: prepares a stale response for the next eligible WorkItem query.
 
-The Stage 9 frontend exposes these controls in the DEV panel. The Stage 10 frontend should show that stale data was ignored without degrading normal state.
+The Stage 9 frontend exposes these controls in the DEV panel. The Stage 10 frontend shows that stale data was ignored without degrading normal state.

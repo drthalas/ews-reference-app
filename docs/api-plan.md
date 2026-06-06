@@ -182,11 +182,11 @@ Implemented. Arms a one-shot async command failure. The next `POST /api/work-ite
 
 ### `POST /api/dev/trigger-stale-response`
 
-Implemented. Arms a one-shot stale WorkItem read. The next eligible `GET /api/work-items` or `GET /api/work-items/{id}` returns a controlled older revision response. Full frontend stale-response protection remains planned for the conflict/stale stage.
+Implemented. Arms a one-shot stale WorkItem read. The next eligible `GET /api/work-items` or `GET /api/work-items/{id}` returns a controlled older revision response. The Stage 10 frontend compares revisions and ignores stale WorkItem responses instead of visually downgrading cached state.
 
 ### `POST /api/dev/trigger-conflict`
 
-Implemented. Arms a one-shot conflict for the next WorkItem PATCH. The next `PATCH /api/work-items/{id}` returns `409 DEV_CONFLICT` with `workItemId`, `clientRevision`, and `serverRevision` details, then the one-shot flag resets. Full conflict resolution UI remains planned for the conflict/stale stage.
+Implemented. Arms a one-shot conflict for the next WorkItem PATCH. The next `PATCH /api/work-items/{id}` returns `409 DEV_CONFLICT` with `workItemId`, `clientRevision`, `serverRevision`, and `serverWorkItem` details, then the one-shot flag resets. The Stage 10 frontend uses this response to show conflict-specific UI with reload and cancel actions.
 
 ## Error Model
 
@@ -197,11 +197,22 @@ Domain endpoints return the canonical error shape:
   "status": 409,
   "code": "WORK_ITEM_REVISION_CONFLICT",
   "message": "The WorkItem has changed on the server.",
-  "details": {
-    "workItemId": "wi-1",
-    "expectedRevision": 3,
-    "actualRevision": 4
-  },
+    "details": {
+      "workItemId": "wi-1",
+      "expectedRevision": 3,
+      "actualRevision": 4,
+      "serverWorkItem": {
+        "id": "wi-1",
+        "title": "Review intake",
+        "status": "blocked",
+        "priority": "medium",
+        "assignee": "Alex",
+        "tags": ["intake", "backend"],
+        "revision": 4,
+        "updatedAt": "2026-06-06T00:00:00Z",
+        "pendingOperation": null
+      }
+    },
   "timestamp": "2026-06-06T00:00:00Z"
 }
 ```

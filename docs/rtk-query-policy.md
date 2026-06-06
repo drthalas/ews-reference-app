@@ -21,6 +21,7 @@ WorkItem endpoints use tags that support narrow invalidation:
 - `WorkItem` with `LIST` for list refresh.
 - `WorkItem` with item id for single-item updates.
 - `Command` with operation id for async command status.
+- UI-only WorkItem event state records ignored stale responses without copying server records into Redux slices.
 
 ## Implemented WorkItem Endpoints
 
@@ -54,4 +55,6 @@ Stage 7 optimistic update uses `onQueryStarted` and `updateQueryData` to patch b
 
 Stage 8 command submission invalidates the affected WorkItem and list cache so active queries can refetch `pendingOperation`. Command status is polled via `getCommand` while the operation is pending. The final WorkItem state is received through existing WorkItem polling.
 
-Stale responses should not overwrite a newer known WorkItem revision once the conflict/stale stage adds explicit stale response handling.
+Stage 10 stale response handling uses revision-aware `merge` policies on `getWorkItems` and `getWorkItem`. Incoming items are accepted when `incoming.revision >= cached.revision`; older incoming revisions are ignored. Detail responses are compared against detail and list cache, while list responses can also preserve a fresher known detail item. Ignored stale responses dispatch a UI-only event for badges/logs.
+
+Successful DEV reset clears RTK Query cache so deterministic seed data with lower revisions can replace newer cached revisions.

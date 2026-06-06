@@ -18,9 +18,10 @@ EWS Reference App is a local reference app for demonstrating frontend-backend in
 - Stage 7 is done: optimistic update and rollback.
 - Stage 8 is done: async command flow.
 - Stage 9 is done: DEV panel for edge cases.
-- Stage 10 is next: conflict and stale response scenarios.
+- Stage 10 is done: conflict and stale response scenarios.
+- Stage 11 is next: prefetch and UX polish.
 
-Stage 9 adds a separate frontend DEV panel and unified backend `/api/dev` controls. The panel can manage response delay, fail-next request, fail-next command, external change, stale response trigger, conflict trigger, and reset. Full conflict resolution UI and stale response protection remain out of scope until Stage 10.
+Stage 10 adds user-facing conflict handling and stale response protection. Conflict PATCH responses show a dedicated conflict state with revision details and reload/cancel actions. WorkItem RTK Query caches compare incoming revisions with the freshest known cache entry and ignore stale list/detail responses without visually downgrading selected details.
 
 ## Repository Shape
 

@@ -12,8 +12,8 @@
 7. Optimistic update - done.
 8. Async command flow - done.
 9. DEV panel - done.
-10. Conflict and stale scenarios - next.
-11. Prefetch - planned.
+10. Conflict and stale scenarios - done.
+11. Prefetch - next.
 12. Tests - planned.
 13. Final demo documentation - planned.
 
@@ -131,11 +131,19 @@ Completed implementation stage:
 
 ### 10. Conflict And Stale Scenarios
 
-Next stage: wire deterministic conflict handling and stale polling protection.
+Completed implementation stage:
+
+- enriched `DEV_CONFLICT` responses with server WorkItem details
+- added conflict UI for classic and optimistic WorkItem saves
+- added reload-from-backend and cancel-editing actions for conflicts
+- added revision-aware WorkItem list/detail cache merge policy
+- ignored incoming stale responses whose revision is lower than the freshest known cached revision
+- showed stale ignored state in the WorkItem screen
+- kept merge editor, force overwrite, and real-time collaboration out of scope
 
 ### 11. Prefetch
 
-Add detail prefetch behavior before navigation or panel open.
+Next stage: add detail prefetch behavior before navigation or panel open and polish the UX.
 
 ### 12. Tests
 

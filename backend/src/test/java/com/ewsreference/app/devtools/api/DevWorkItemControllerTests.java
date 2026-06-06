@@ -260,7 +260,11 @@ class DevWorkItemControllerTests {
                 .andExpect(jsonPath("$.code").value("DEV_CONFLICT"))
                 .andExpect(jsonPath("$.details.workItemId").value("wi-3"))
                 .andExpect(jsonPath("$.details.serverRevision").value(1))
-                .andExpect(jsonPath("$.details.clientRevision").value(0));
+                .andExpect(jsonPath("$.details.clientRevision").value(0))
+                .andExpect(jsonPath("$.details.serverWorkItem.id").value("wi-3"))
+                .andExpect(jsonPath("$.details.serverWorkItem.title").value("Confirm error contract"))
+                .andExpect(jsonPath("$.details.serverWorkItem.status").value("blocked"))
+                .andExpect(jsonPath("$.details.serverWorkItem.revision").value(1));
 
         mockMvc.perform(patch("/api/work-items/wi-3")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -292,6 +296,53 @@ class DevWorkItemControllerTests {
                 .andExpect(jsonPath("$.updatedAt").value(lessThan(changed.get("updatedAt").asText())));
 
         mockMvc.perform(get("/api/work-items/wi-4"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.revision").value(2));
+    }
+
+    @Test
+    void triggerStaleResponseCanAffectNextListResponse() throws Exception {
+        mockMvc.perform(post("/api/dev/work-items/wi-1/external-change"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.revision").value(2));
+
+        mockMvc.perform(post("/api/dev/trigger-stale-response"))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/api/work-items"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value("wi-1"))
+                .andExpect(jsonPath("$[0].revision").value(1));
+
+        mockMvc.perform(get("/api/work-items"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value("wi-1"))
+                .andExpect(jsonPath("$[0].revision").value(2));
+    }
+
+    @Test
+    void resetClearsConflictAndStaleTriggers() throws Exception {
+        mockMvc.perform(post("/api/dev/trigger-conflict"))
+                .andExpect(status().isOk());
+        mockMvc.perform(post("/api/dev/trigger-stale-response"))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(post("/api/dev/reset"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.conflictMode").value(false))
+                .andExpect(jsonPath("$.staleResponseMode").value(false));
+
+        mockMvc.perform(patch("/api/work-items/wi-1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "status": "done"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("done"));
+
+        mockMvc.perform(get("/api/work-items/wi-1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.revision").value(2));
     }

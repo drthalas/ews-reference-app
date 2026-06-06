@@ -1,4 +1,5 @@
 import { baseApi } from '../../../shared/api/baseApi';
+import { clearStaleResponseEvent } from '../../workItems/model/workItemEventsSlice';
 import type {
   DevActionResult,
   DevSettings,
@@ -26,6 +27,15 @@ export const devPanelApi = baseApi.injectEndpoints({
         url: '/dev/reset',
         method: 'POST',
       }),
+      async onQueryStarted(_arg, { dispatch, queryFulfilled }) {
+        try {
+          await queryFulfilled;
+          dispatch(clearStaleResponseEvent());
+          dispatch(baseApi.util.resetApiState());
+        } catch {
+          // The panel shows the mutation error; cache is only cleared after a confirmed reset.
+        }
+      },
       invalidatesTags: [
         { type: 'DevSettings', id: 'CURRENT' },
         { type: 'WorkItem', id: 'LIST' },

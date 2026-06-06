@@ -1,6 +1,6 @@
 # Conflict Handling
 
-Conflict handling UX is planned for Stage 10. Stage 9 adds backend DEV controls that can trigger conflict and stale response scenarios, but it does not implement full conflict resolution UI.
+Conflict handling UX is implemented in Stage 10. Stage 9 added backend DEV controls that trigger conflict and stale response scenarios; Stage 10 wires those controls to user-facing state.
 
 ## Goals
 
@@ -11,7 +11,7 @@ Conflict handling UX is planned for Stage 10. Stage 9 adds backend DEV controls 
 
 ## Revision Contract
 
-WorkItem records include `revision`. Mutating requests send `expectedRevision`. If `expectedRevision` does not match the current server revision, the backend returns `409` and does not apply the requested change.
+WorkItem records include `revision`. The current reference implementation uses DEV controls to create deterministic one-shot conflicts. A triggered conflict returns `409` and does not apply the requested change.
 
 Conflict error shape:
 
@@ -21,9 +21,20 @@ Conflict error shape:
   "code": "WORK_ITEM_REVISION_CONFLICT",
   "message": "The WorkItem has changed on the server.",
   "details": {
-    "workItemId": "wi-1",
-    "expectedRevision": 3,
-    "actualRevision": 4
+      "workItemId": "wi-1",
+      "clientRevision": 3,
+      "serverRevision": 4,
+      "serverWorkItem": {
+        "id": "wi-1",
+        "title": "Review intake",
+        "status": "blocked",
+        "priority": "medium",
+        "assignee": "Alex",
+        "tags": ["intake", "backend"],
+        "revision": 4,
+        "updatedAt": "2026-06-06T00:00:00Z",
+        "pendingOperation": null
+      }
   },
   "timestamp": "2026-06-06T00:00:00Z"
 }
@@ -32,9 +43,11 @@ Conflict error shape:
 ## Frontend Behavior
 
 - Roll back any optimistic cache patch for the affected WorkItem.
-- Display a conflict state near the affected row or detail form.
-- Fetch the current server item.
-- Let the user retry against the new revision after reviewing the server-confirmed state.
+- Display a conflict state near the detail form.
+- Show error code, message, client revision, server revision, and WorkItem id when available.
+- Offer `Обновить с backend` to refetch list/detail data and exit edit mode.
+- Offer `Отменить редактирование` to reset the draft to the latest visible server state and exit edit mode.
+- Avoid merge editor, compare editor, and force overwrite behavior in this stage.
 
 ## DEV Support
 
@@ -44,7 +57,7 @@ Implemented DEV support:
 - `POST /api/dev/trigger-conflict` prepares a deterministic one-shot `409 DEV_CONFLICT` for the next WorkItem PATCH.
 - `PUT /api/dev/settings` can enable `conflictMode`, where eligible PATCH requests return `409 DEV_CONFLICT`.
 
-Stage 10 should turn these controls into a full conflict handling demo with clear frontend state and retry behavior.
+Stage 10 turns these controls into a conflict handling demo with clear frontend state and reload/cancel behavior.
 
 ## Constraints
 

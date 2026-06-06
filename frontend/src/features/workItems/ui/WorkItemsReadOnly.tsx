@@ -28,6 +28,8 @@ import {
 } from '@mui/material';
 import { skipToken } from '@reduxjs/toolkit/query';
 import { useEffect, useMemo, useState } from 'react';
+import { useSelector } from 'react-redux';
+import type { RootState } from '../../../app/store';
 import { DevPanel } from '../../devPanel/ui/DevPanel';
 import {
   useGetCommandQuery,
@@ -49,6 +51,7 @@ import {
   type WorkItemPriority,
   type WorkItemStatus,
 } from '../model/workItem';
+import type { StaleResponseEvent } from '../model/workItemEventsSlice';
 
 type WorkItemDraft = {
   title: string;
@@ -56,6 +59,15 @@ type WorkItemDraft = {
   priority: WorkItemPriority;
   assignee: string;
   tags: string;
+};
+
+type ConflictState = {
+  code: string;
+  message: string;
+  workItemId: string | null;
+  clientRevision: number | null;
+  serverRevision: number | null;
+  serverWorkItem: WorkItem | null;
 };
 
 const POLLING_INTERVAL_MS = 3000;
@@ -99,14 +111,54 @@ function parseTags(value: string) {
 }
 
 function getMutationErrorMessage(error: unknown, fallback: string) {
-  if (typeof error === 'object' && error && 'data' in error) {
-    const data = (error as { data?: ApiError }).data;
-    if (data?.message || data?.code) {
-      return [data.code, data.message].filter(Boolean).join(': ');
-    }
+  const data = getApiError(error);
+  if (data?.message || data?.code) {
+    return [data.code, data.message].filter(Boolean).join(': ');
   }
 
   return fallback;
+}
+
+function getApiError(error: unknown) {
+  if (typeof error === 'object' && error && 'data' in error) {
+    return (error as { data?: ApiError }).data ?? null;
+  }
+  return null;
+}
+
+function asNumber(value: unknown) {
+  return typeof value === 'number' ? value : null;
+}
+
+function asString(value: unknown) {
+  return typeof value === 'string' ? value : null;
+}
+
+function isWorkItem(value: unknown): value is WorkItem {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    typeof (value as WorkItem).id === 'string' &&
+    typeof (value as WorkItem).revision === 'number' &&
+    typeof (value as WorkItem).updatedAt === 'string'
+  );
+}
+
+function getConflictState(error: unknown): ConflictState | null {
+  const apiError = getApiError(error);
+  if (!apiError || (apiError.status !== 409 && !apiError.code.includes('CONFLICT'))) {
+    return null;
+  }
+
+  const details = apiError.details ?? {};
+  return {
+    code: apiError.code,
+    message: apiError.message,
+    workItemId: asString(details.workItemId),
+    clientRevision: asNumber(details.clientRevision),
+    serverRevision: asNumber(details.serverRevision),
+    serverWorkItem: isWorkItem(details.serverWorkItem) ? details.serverWorkItem : null,
+  };
 }
 
 function toUpdateRequest(draft: WorkItemDraft): UpdateWorkItemRequest {
@@ -141,6 +193,7 @@ export function WorkItemsReadOnly() {
   const [isPollingEnabled, setIsPollingEnabled] = useState(true);
   const [optimisticPendingId, setOptimisticPendingId] = useState<string | null>(null);
   const [lastRefreshAt, setLastRefreshAt] = useState<Date | null>(null);
+  const staleEvent = useSelector((state: RootState) => state.workItemEvents.lastStaleResponse);
   const pollingInterval = isPollingEnabled && !optimisticPendingId ? POLLING_INTERVAL_MS : 0;
   const {
     data: workItems,
@@ -172,9 +225,16 @@ export function WorkItemsReadOnly() {
     error: detailsError,
     isLoading: isDetailsLoading,
     isFetching: isDetailsFetching,
+    refetch: refetchSelectedDetails,
   } = useGetWorkItemQuery(selectedId ?? skipToken, { pollingInterval });
 
   const selectedWorkItem = selectedFromList ?? selectedDetails ?? null;
+  const reloadSelectedWorkItem = () => {
+    refetch();
+    if (selectedId) {
+      refetchSelectedDetails();
+    }
+  };
 
   if (isListLoading) {
     return (
@@ -220,9 +280,11 @@ export function WorkItemsReadOnly() {
   return (
     <Stack spacing={2}>
       <Alert severity="info" icon={<InfoOutlinedIcon />}>
-        Этап 9: DEV panel собирает backend-controlled edge cases в отдельный drawer.
-        Normal WorkItem flow остаётся доступен без DEV controls.
+        Этап 10: conflict handling показывает 409 state, а stale response protection
+        игнорирует устаревшие revisions.
       </Alert>
+
+      {staleEvent ? <StaleResponseAlert event={staleEvent} /> : null}
 
       <Paper variant="outlined" sx={{ p: 2 }}>
         <Stack
@@ -303,6 +365,8 @@ export function WorkItemsReadOnly() {
             isFetching={isDetailsFetching}
             hasError={Boolean(detailsError)}
             onOptimisticPendingChange={setOptimisticPendingId}
+            onReloadFromBackend={reloadSelectedWorkItem}
+            staleEvent={staleEvent}
           />
         </Grid>
       </Grid>
@@ -374,23 +438,78 @@ function WorkItemListRow({
   );
 }
 
+function StaleResponseAlert({ event }: { event: StaleResponseEvent }) {
+  return (
+    <Alert severity="warning">
+      Stale response ignored: {event.workItemId} from {event.source} returned rev{' '}
+      {event.incomingRevision}, current cache kept rev {event.currentRevision}.
+    </Alert>
+  );
+}
+
+function ConflictAlert({
+  conflict,
+  onReloadFromBackend,
+  onCancelEditing,
+}: {
+  conflict: ConflictState;
+  onReloadFromBackend: () => void;
+  onCancelEditing: () => void;
+}) {
+  return (
+    <Alert severity="warning">
+      <Stack spacing={1.5}>
+        <Stack spacing={0.5}>
+          <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+            Конфликт версий
+          </Typography>
+          <Typography variant="body2">
+            Данные на backend изменились. Текущая форма основана на устаревшей версии.
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            {conflict.code}: {conflict.message}
+          </Typography>
+          <Stack direction="row" spacing={1} flexWrap="wrap">
+            <Chip size="small" label={`client rev ${conflict.clientRevision ?? 'n/a'}`} />
+            <Chip size="small" label={`server rev ${conflict.serverRevision ?? 'n/a'}`} />
+            {conflict.workItemId ? <Chip size="small" label={conflict.workItemId} /> : null}
+          </Stack>
+        </Stack>
+        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
+          <Button variant="contained" size="small" onClick={onReloadFromBackend}>
+            Обновить с backend
+          </Button>
+          <Button variant="outlined" size="small" onClick={onCancelEditing}>
+            Отменить редактирование
+          </Button>
+        </Stack>
+      </Stack>
+    </Alert>
+  );
+}
+
 function WorkItemDetails({
   workItem,
   isLoading,
   isFetching,
   hasError,
   onOptimisticPendingChange,
+  onReloadFromBackend,
+  staleEvent,
 }: {
   workItem: WorkItem | null;
   isLoading: boolean;
   isFetching: boolean;
   hasError: boolean;
   onOptimisticPendingChange: (id: string | null) => void;
+  onReloadFromBackend: () => void;
+  staleEvent: StaleResponseEvent | null;
 }) {
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState<WorkItemDraft | null>(null);
   const [activeOperationId, setActiveOperationId] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
+  const [conflictState, setConflictState] = useState<ConflictState | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [updateWorkItem, { isLoading: isSaving }] = useUpdateWorkItemMutation();
   const [updateWorkItemOptimistic, { isLoading: isOptimisticSaving }] =
@@ -410,6 +529,11 @@ function WorkItemDetails({
       setDraft(toDraft(workItem));
     }
   }, [isEditing, workItem]);
+
+  useEffect(() => {
+    setConflictState(null);
+    setFormError(null);
+  }, [workItem?.id]);
 
   useEffect(() => {
     if (workItem?.pendingOperation && workItem.pendingOperation !== activeOperationId) {
@@ -466,6 +590,7 @@ function WorkItemDetails({
   const startEditing = () => {
     setDraft(toDraft(workItem));
     setFormError(null);
+    setConflictState(null);
     setSuccessMessage(null);
     setIsEditing(true);
   };
@@ -473,12 +598,23 @@ function WorkItemDetails({
   const cancelEditing = () => {
     setDraft(toDraft(workItem));
     setFormError(null);
+    setConflictState(null);
     setIsEditing(false);
   };
 
   const updateDraft = <Key extends keyof WorkItemDraft>(key: Key, value: WorkItemDraft[Key]) => {
     setDraft((current) => ({ ...(current ?? toDraft(workItem)), [key]: value }));
     setFormError(null);
+    setConflictState(null);
+  };
+
+  const reloadAfterConflict = () => {
+    onReloadFromBackend();
+    setDraft(conflictState?.serverWorkItem ? toDraft(conflictState.serverWorkItem) : toDraft(workItem));
+    setFormError(null);
+    setConflictState(null);
+    setIsEditing(false);
+    setSuccessMessage('Данные обновляются с backend.');
   };
 
   const saveDraft = async (mode: 'classic' | 'optimistic') => {
@@ -509,6 +645,13 @@ function WorkItemDetails({
     } catch (error) {
       if (mode === 'optimistic') {
         setDraft(toDraft(workItem));
+      }
+      const conflict = getConflictState(error);
+      if (conflict) {
+        setConflictState(conflict);
+        setFormError(null);
+        setSuccessMessage(null);
+        return;
       }
       setFormError(
         getMutationErrorMessage(
@@ -571,6 +714,7 @@ function WorkItemDetails({
             </Typography>
           </Stack>
           <Stack direction="row" spacing={1} flexWrap="wrap">
+            {conflictState ? <Chip color="warning" label="Conflict detected" /> : null}
             {isOptimisticSaving ? (
               <Chip color="secondary" label="Ожидает подтверждения backend" />
             ) : null}
@@ -597,13 +741,28 @@ function WorkItemDetails({
         {isEditing ? (
           <WorkItemEditForm
             draft={activeDraft}
-            disabled={isSaving || isOptimisticSaving}
+            disabled={isSaving || isOptimisticSaving || Boolean(conflictState)}
             titleError={titleError}
             onChange={updateDraft}
           />
         ) : (
           <WorkItemReadDetails workItem={workItem} />
         )}
+
+        {conflictState ? (
+          <ConflictAlert
+            conflict={conflictState}
+            onReloadFromBackend={reloadAfterConflict}
+            onCancelEditing={cancelEditing}
+          />
+        ) : null}
+
+        {staleEvent?.workItemId === workItem.id ? (
+          <Alert severity="warning">
+            Stale response ignored for {staleEvent.workItemId}: incoming rev{' '}
+            {staleEvent.incomingRevision} was older than current rev {staleEvent.currentRevision}.
+          </Alert>
+        ) : null}
 
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} justifyContent="flex-end">
           {isEditing ? (
@@ -614,7 +773,7 @@ function WorkItemDetails({
               <Button
                 variant="outlined"
                 onClick={() => saveDraft('optimistic')}
-                disabled={isSaving || isOptimisticSaving || titleError}
+                disabled={isSaving || isOptimisticSaving || titleError || Boolean(conflictState)}
                 startIcon={
                   isOptimisticSaving ? <CircularProgress color="inherit" size={16} /> : <SyncIcon />
                 }
@@ -624,7 +783,7 @@ function WorkItemDetails({
               <Button
                 variant="contained"
                 onClick={() => saveDraft('classic')}
-                disabled={isSaving || isOptimisticSaving || titleError}
+                disabled={isSaving || isOptimisticSaving || titleError || Boolean(conflictState)}
                 startIcon={isSaving ? <CircularProgress color="inherit" size={16} /> : undefined}
               >
                 {isSaving ? 'Сохранение...' : 'Сохранить'}
@@ -653,8 +812,7 @@ function WorkItemDetails({
         </Stack>
 
         <Alert severity="info">
-          Этап 9 adds a separate DEV panel for backend-controlled edge cases. Full conflict
-          and stale-response UX remains planned for Этап 10.
+          Этап 10 handles conflicts without overwrite and ignores stale polling/detail revisions.
         </Alert>
       </Stack>
     </Paper>

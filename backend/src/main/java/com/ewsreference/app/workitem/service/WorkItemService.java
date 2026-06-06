@@ -73,7 +73,7 @@ public class WorkItemService {
 
         WorkItem current = findRequired(id);
         if (devFailureService.consumePatchConflict()) {
-            throw new DevConflictException(id, current.revision());
+            throw new DevConflictException(current);
         }
 
         WorkItem candidate = applyPatch(current, request);

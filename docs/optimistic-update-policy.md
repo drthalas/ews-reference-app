@@ -42,11 +42,11 @@ The forced failure returns `500` with `DEV_FORCED_FAILURE` and then resets, so t
 
 ## Conflict Behavior
 
-Conflict handling is planned for a later stage. When revision conflict support is added, the optimistic patch should be undone, a conflict state should be shown, and the current server item should be requested.
+Conflict handling is implemented in Stage 10. When an optimistic save receives `409 DEV_CONFLICT`, the optimistic cache patch is undone, a dedicated conflict state is shown, and the user can either reload from backend or cancel editing. The frontend does not force overwrite or open a merge editor.
 
 ## Polling Interaction
 
-Stage 7 pauses WorkItem polling while an optimistic save is pending. This avoids the obvious UX bug where ordinary polling immediately overwrites the optimistic cache patch before the backend response. Full stale response handling remains deferred to the conflict/stale stage.
+Stage 7 pauses WorkItem polling while an optimistic save is pending. This avoids the obvious UX bug where ordinary polling immediately overwrites the optimistic cache patch before the backend response. Stage 10 adds revision-aware stale response protection for list and detail cache merges.
 
 ## Constraints
 

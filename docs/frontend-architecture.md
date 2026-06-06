@@ -2,7 +2,7 @@
 
 The frontend is a Vite React application written in TypeScript.
 
-Stage 9 adds a separate DEV panel feature through RTK Query while keeping the normal WorkItem flows visible.
+Stage 10 adds conflict UI and stale response protection while keeping the normal WorkItem flows visible.
 
 ## Layers
 
@@ -35,7 +35,7 @@ DEV controls belong in `features/devPanel/api`. Current typed endpoints cover:
 - `triggerStaleResponse`
 - `triggerConflict`
 
-Later stages will add full conflict/stale handling.
+Conflict and stale handling are implemented in Stage 10.
 
 ## UI State
 
@@ -70,12 +70,14 @@ The WorkItem feature is compact and operational:
 - WorkItem `pendingOperation` is shown in list rows and details
 - WorkItem polling brings in the final completed state
 - a separate right-side DEV panel exposes backend-controlled edge-case actions
+- conflict saves show a dedicated conflict state with revision context
+- stale list/detail responses are ignored when their revision is older than the freshest known cache entry
 
-Later stages will add prefetch behavior, conflict UI, and stale response protection.
+Later stages will add prefetch behavior and broader UX polish.
 
 ## Stale Response Protection
 
-Stage 7 pauses polling while an optimistic save is pending. Full stale response protection is planned for the conflict/stale stage, where the frontend must compare incoming revisions with the newest revision already known for each item.
+Stage 7 pauses polling while an optimistic save is pending. Stage 10 adds explicit stale response protection: WorkItem list/detail cache merges compare `revision`, accept `incoming.revision >= cached.revision`, and ignore older incoming revisions. Ignored stale responses are surfaced as UI-only state.
 
 ## Styling
 
