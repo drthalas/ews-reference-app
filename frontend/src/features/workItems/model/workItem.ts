@@ -11,6 +11,25 @@ export type WorkItem = {
   tags: string[];
   revision: number;
   updatedAt: string;
+  pendingOperation: string | null;
+};
+
+export type CommandStatus = 'pending' | 'completed' | 'failed';
+
+export type CommandType = 'complete';
+
+export type CommandOperation = {
+  operationId: string;
+  status: CommandStatus;
+  workItemId: string;
+  resultRevision: number | null;
+  error: string | null;
+  createdAt: string;
+  completedAt: string | null;
+};
+
+export type SubmitWorkItemCommandRequest = {
+  type: CommandType;
 };
 
 export type UpdateWorkItemRequest = Partial<{

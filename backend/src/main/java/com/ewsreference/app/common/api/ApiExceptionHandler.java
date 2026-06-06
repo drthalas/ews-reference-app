@@ -1,5 +1,6 @@
 package com.ewsreference.app.common.api;
 
+import com.ewsreference.app.command.service.CommandNotFoundException;
 import com.ewsreference.app.devtools.service.DevForcedFailureException;
 import com.ewsreference.app.workitem.service.ValidationException;
 import com.ewsreference.app.workitem.service.WorkItemNotFoundException;
@@ -20,6 +21,16 @@ public class ApiExceptionHandler {
                 "WORK_ITEM_NOT_FOUND",
                 exception.getMessage(),
                 Map.of("id", exception.id())
+        );
+    }
+
+    @ExceptionHandler(CommandNotFoundException.class)
+    public ResponseEntity<ApiError> handleCommandNotFound(CommandNotFoundException exception) {
+        return error(
+                HttpStatus.NOT_FOUND,
+                "COMMAND_NOT_FOUND",
+                exception.getMessage(),
+                Map.of("operationId", exception.operationId())
         );
     }
 

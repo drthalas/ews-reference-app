@@ -14,7 +14,8 @@ public record WorkItemDto(
         String assignee,
         List<String> tags,
         long revision,
-        Instant updatedAt
+        Instant updatedAt,
+        String pendingOperation
 ) {
     public static WorkItemDto fromDomain(WorkItem workItem) {
         return new WorkItemDto(
@@ -25,7 +26,8 @@ public record WorkItemDto(
                 workItem.assignee(),
                 workItem.tags(),
                 workItem.revision(),
-                workItem.updatedAt()
+                workItem.updatedAt(),
+                workItem.pendingOperation()
         );
     }
 }

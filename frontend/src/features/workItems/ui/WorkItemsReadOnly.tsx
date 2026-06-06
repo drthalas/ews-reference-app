@@ -29,8 +29,10 @@ import {
 import { skipToken } from '@reduxjs/toolkit/query';
 import { useEffect, useMemo, useState } from 'react';
 import {
+  useGetCommandQuery,
   useGetWorkItemQuery,
   useGetWorkItemsQuery,
+  useSubmitWorkItemCommandMutation,
   useTriggerExternalChangeMutation,
   useTriggerFailNextRequestMutation,
   useUpdateWorkItemOptimisticMutation,
@@ -42,6 +44,7 @@ import {
   workItemStatusLabels,
   workItemStatusValues,
   type ApiError,
+  type CommandOperation,
   type UpdateWorkItemRequest,
   type WorkItem,
   type WorkItemPriority,
@@ -115,6 +118,23 @@ function toUpdateRequest(draft: WorkItemDraft): UpdateWorkItemRequest {
     assignee: draft.assignee.trim() || null,
     tags: parseTags(draft.tags),
   };
+}
+
+function getCommandStatus(
+  workItem: WorkItem,
+  commandOperation: CommandOperation | undefined,
+  activeOperationId: string | null
+) {
+  if (commandOperation) {
+    return `${commandOperation.operationId}: ${commandOperation.status}`;
+  }
+  if (workItem.pendingOperation) {
+    return `${workItem.pendingOperation}: pending`;
+  }
+  if (activeOperationId) {
+    return `${activeOperationId}: pending`;
+  }
+  return null;
 }
 
 export function WorkItemsReadOnly() {
@@ -201,8 +221,8 @@ export function WorkItemsReadOnly() {
   return (
     <Stack spacing={2}>
       <Alert severity="info" icon={<InfoOutlinedIcon />}>
-        Этап 7: optimistic update сразу меняет UI, а backend error откатывает изменения.
-        Async commands и conflict/stale сценарии будут добавлены позже.
+        Этап 8: async command flow принимает команду сразу, показывает pending state,
+        а финальное состояние приходит через polling.
       </Alert>
 
       <Paper variant="outlined" sx={{ p: 2 }}>
@@ -335,6 +355,13 @@ function WorkItemListRow({
                 variant="outlined"
               />
               <Chip size="small" label={`rev ${workItem.revision}`} variant="outlined" />
+              {workItem.pendingOperation ? (
+                <Chip
+                  size="small"
+                  color="secondary"
+                  label={`pending ${workItem.pendingOperation}`}
+                />
+              ) : null}
             </Stack>
           </Stack>
         }
@@ -365,6 +392,7 @@ function WorkItemDetails({
 }) {
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState<WorkItemDraft | null>(null);
+  const [activeOperationId, setActiveOperationId] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [updateWorkItem, { isLoading: isSaving }] = useUpdateWorkItemMutation();
@@ -374,12 +402,43 @@ function WorkItemDetails({
     useTriggerExternalChangeMutation();
   const [triggerFailNextRequest, { isLoading: isArmingFailure }] =
     useTriggerFailNextRequestMutation();
+  const [submitWorkItemCommand, { isLoading: isSubmittingCommand }] =
+    useSubmitWorkItemCommandMutation();
+  const {
+    data: commandOperation,
+    error: commandError,
+    isFetching: isCommandFetching,
+  } = useGetCommandQuery(activeOperationId ?? skipToken, {
+    pollingInterval: activeOperationId ? 1000 : 0,
+  });
 
   useEffect(() => {
     if (workItem && !isEditing) {
       setDraft(toDraft(workItem));
     }
   }, [isEditing, workItem]);
+
+  useEffect(() => {
+    if (workItem?.pendingOperation && workItem.pendingOperation !== activeOperationId) {
+      setActiveOperationId(workItem.pendingOperation);
+    }
+  }, [activeOperationId, workItem?.pendingOperation]);
+
+  useEffect(() => {
+    if (!commandOperation) {
+      return;
+    }
+
+    if (commandOperation.status === 'completed') {
+      setSuccessMessage(`Async command ${commandOperation.operationId} completed.`);
+      setActiveOperationId(null);
+    }
+
+    if (commandOperation.status === 'failed') {
+      setFormError(commandOperation.error ?? `Async command ${commandOperation.operationId} failed.`);
+      setActiveOperationId(null);
+    }
+  }, [commandOperation]);
 
   if (isLoading) {
     return (
@@ -492,6 +551,29 @@ function WorkItemDetails({
     }
   };
 
+  const runAsyncCompleteCommand = async () => {
+    setFormError(null);
+    setSuccessMessage(null);
+
+    try {
+      const submitted = await submitWorkItemCommand({
+        id: workItem.id,
+        command: { type: 'complete' },
+      }).unwrap();
+      setActiveOperationId(submitted.operationId);
+      setSuccessMessage(`Async command ${submitted.operationId} accepted by backend.`);
+    } catch (error) {
+      setFormError(
+        getMutationErrorMessage(
+          error,
+          'Не удалось запустить async command. Проверьте backend и повторите попытку.'
+        )
+      );
+    }
+  };
+
+  const commandStatus = getCommandStatus(workItem, commandOperation, activeOperationId);
+
   const runExternalChange = async () => {
     setFormError(null);
     setSuccessMessage(null);
@@ -519,6 +601,11 @@ function WorkItemDetails({
         {isSaving || isOptimisticSaving ? <LinearProgress /> : null}
         {successMessage ? <Alert severity="success">{successMessage}</Alert> : null}
         {formError ? <Alert severity="error">{formError}</Alert> : null}
+        {commandError ? (
+          <Alert severity="error">
+            Command status could not be loaded. Polling will still refresh WorkItem data.
+          </Alert>
+        ) : null}
 
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} justifyContent="space-between">
           <Stack spacing={0.5}>
@@ -533,6 +620,12 @@ function WorkItemDetails({
           <Stack direction="row" spacing={1} flexWrap="wrap">
             {isOptimisticSaving ? (
               <Chip color="secondary" label="Ожидает подтверждения backend" />
+            ) : null}
+            {commandStatus ? (
+              <Chip
+                color="secondary"
+                label={isCommandFetching ? `${commandStatus} / checking` : commandStatus}
+              />
             ) : null}
             <Chip
               color={statusColor[workItem.status]}
@@ -587,9 +680,19 @@ function WorkItemDetails({
           ) : (
             <>
               <Button
+                variant="contained"
+                onClick={runAsyncCompleteCommand}
+                disabled={isSubmittingCommand || Boolean(workItem.pendingOperation || activeOperationId)}
+                startIcon={
+                  isSubmittingCommand ? <CircularProgress color="inherit" size={16} /> : <SyncIcon />
+                }
+              >
+                {isSubmittingCommand ? 'Запуск...' : 'Запустить async complete'}
+              </Button>
+              <Button
                 variant="outlined"
                 onClick={runExternalChange}
-                disabled={isChangingExternally || isArmingFailure}
+                disabled={isChangingExternally || isArmingFailure || isSubmittingCommand}
                 startIcon={
                   isChangingExternally ? <CircularProgress color="inherit" size={16} /> : <SyncIcon />
                 }
@@ -599,7 +702,7 @@ function WorkItemDetails({
               <Button
                 variant="outlined"
                 onClick={armFailNextRequest}
-                disabled={isChangingExternally || isArmingFailure}
+                disabled={isChangingExternally || isArmingFailure || isSubmittingCommand}
                 startIcon={isArmingFailure ? <CircularProgress color="inherit" size={16} /> : undefined}
               >
                 {isArmingFailure ? 'Готовлю ошибку...' : 'Следующее сохранение завершить ошибкой'}
@@ -612,9 +715,8 @@ function WorkItemDetails({
         </Stack>
 
         <Alert severity="info">
-          Этап 7 adds optimistic save. The UI patches RTK Query cache immediately, pauses
-          polling while the optimistic request is pending, and rolls back the cache if backend
-          returns an error.
+          Этап 8 adds async command flow. Backend returns 202 with an operation id, command
+          status is polled separately, and WorkItem polling brings in the final completed state.
         </Alert>
       </Stack>
     </Paper>
@@ -628,6 +730,7 @@ function WorkItemReadDetails({ workItem }: { workItem: WorkItem }) {
         <DetailItem label="Assignee" value={workItem.assignee ?? 'Unassigned'} />
         <DetailItem label="Revision" value={`rev ${workItem.revision}`} />
         <DetailItem label="Updated" value={formatDate(workItem.updatedAt)} />
+        <DetailItem label="Pending operation" value={workItem.pendingOperation ?? 'None'} />
       </Grid>
 
       <Stack spacing={1}>

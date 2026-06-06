@@ -46,7 +46,8 @@ public class InMemoryWorkItemRepository implements WorkItemRepository {
                 "Alex",
                 List.of("intake", "backend"),
                 1,
-                seedTime
+                seedTime,
+                null
         ));
         save(new WorkItem(
                 "wi-2",
@@ -56,7 +57,8 @@ public class InMemoryWorkItemRepository implements WorkItemRepository {
                 "Morgan",
                 List.of("validation"),
                 1,
-                seedTime
+                seedTime,
+                null
         ));
         save(new WorkItem(
                 "wi-3",
@@ -66,7 +68,8 @@ public class InMemoryWorkItemRepository implements WorkItemRepository {
                 null,
                 List.of("api", "errors"),
                 1,
-                seedTime
+                seedTime,
+                null
         ));
         save(new WorkItem(
                 "wi-4",
@@ -76,7 +79,8 @@ public class InMemoryWorkItemRepository implements WorkItemRepository {
                 "Sam",
                 List.of("docs"),
                 1,
-                seedTime
+                seedTime,
+                null
         ));
     }
 }

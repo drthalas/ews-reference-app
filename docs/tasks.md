@@ -14,7 +14,8 @@ This file is the compact execution map for future work.
 | 6. Polling | Done | Polling controls, interval refresh, external-change support, and visual polling state. |
 | 6.5. Railway demo deploy | Done | Railway-ready backend/frontend runtime config and manual deploy runbook. |
 | 7. Optimistic update | Done | Optimistic mutation, pending state, rollback, and failed-change feedback. |
-| 8. Async command flow | Next | Command submission, operation status, delayed completion, and pending operation UI. |
+| 8. Async command flow | Done | Command submission, operation status, delayed completion, and pending operation UI. |
+| 9. DEV panel | Next | Local controls for delays, failures, reset, external change, stale response, and conflict demos. |
 
 ## Execution Order
 
@@ -94,6 +95,20 @@ This file is the compact execution map for future work.
 - Added optimistic/pending badge and a fail-next-request demo button.
 - Preserved the Stage 5 server-confirmed save path without optimistic cache patching.
 - Paused polling while an optimistic save is pending to avoid obvious stale visual overwrite.
+
+## Completed Stage 8 Checklist
+
+- Added `pendingOperation` to the WorkItem contract.
+- Added `POST /api/work-items/{id}/commands` with `202 Accepted`.
+- Added `GET /api/commands/{operationId}`.
+- Added in-memory command operation storage with deterministic `op-N` ids.
+- Added delayed single-process completion for the `complete` command.
+- Marked WorkItems with `pendingOperation` when commands are accepted.
+- Completed commands clear `pendingOperation`, set status to `done`, increment revision, and update `updatedAt`.
+- Added backend tests for submit, pending state, command status, delayed completion, invalid command payloads, and not-found errors.
+- Added RTK Query `submitWorkItemCommand` and `getCommand` endpoints.
+- Added frontend command submit control, pending badge, command status polling, and final-state polling behavior.
+- Kept Redis, external queues, WebSocket, auth, conflict handling, and full DEV panel out of scope.
 
 ## Future Implementation Guardrails
 

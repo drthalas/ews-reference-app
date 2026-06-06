@@ -4,9 +4,9 @@ EWS Reference App demonstrates frontend-backend interaction patterns in an EWS-l
 
 ## Stage Position
 
-Stages 1 through 6 are complete. The project now has the scaffold, architecture documentation, the backend WorkItem API, frontend RTK Query integration, server-confirmed editing, polling, and a minimal external-change demo.
+Stages 1 through 8 are complete. The project now has the scaffold, architecture documentation, the backend WorkItem API, frontend RTK Query integration, server-confirmed editing, polling, optimistic update/rollback, Railway deployment preparation, and async command flow.
 
-Stage 7 will add optimistic update and rollback. Async commands, full DEV controls, conflict/stale simulation, prefetch behavior, and broader test coverage remain planned for later stages.
+Stage 9 will add the DEV panel for edge cases. Full conflict/stale simulation, prefetch behavior, and broader test coverage remain planned for later stages.
 
 ## Monorepo Layout
 
@@ -24,7 +24,7 @@ The frontend communicates with the backend only through feature API modules buil
 
 ## Domain Boundary
 
-`WorkItem` is the domain object. It represents a small unit of work with title, status, priority, optional assignee, tags, revision, and timestamps. Status values are `new`, `in_progress`, `blocked`, and `done`. Priority values are `low`, `medium`, `high`, and `critical`.
+`WorkItem` is the domain object. It represents a small unit of work with title, status, priority, optional assignee, tags, revision, timestamps, and optional pending operation state. Status values are `new`, `in_progress`, `blocked`, and `done`. Priority values are `low`, `medium`, `high`, and `critical`.
 
 Backend revisions are the source of truth for freshness. Every server-confirmed WorkItem change increments the item revision. The frontend may display pending local intent, but it must reconcile against server-confirmed data.
 
@@ -42,7 +42,7 @@ Storage will remain in memory to keep the app reproducible and focused on refere
 
 ## API Boundary
 
-Implemented main API endpoints live under `/api/work-items`. Future command endpoints are planned under `/api/commands`. DEV endpoints live under `/api/dev` and must stay separated from normal domain behavior.
+Implemented main API endpoints live under `/api/work-items`. Command status endpoints live under `/api/commands`. DEV endpoints live under `/api/dev` and must stay separated from normal domain behavior.
 
 The canonical error model for domain endpoints is `ApiError(status, code, message, details, timestamp)`.
 

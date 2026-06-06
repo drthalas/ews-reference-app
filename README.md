@@ -4,7 +4,7 @@ EWS Reference App is a reference application for demonstrating common frontend-b
 
 ## Current Status
 
-Stages 1 through 7 are complete. Stage 8 is next.
+Stages 1 through 8 are complete. Stage 9 is next.
 
 Implemented:
 
@@ -21,6 +21,7 @@ Implemented:
 - WorkItem polling controls and external-change demo endpoint
 - Railway demo-deploy preparation for separate frontend and backend services
 - Optimistic WorkItem save flow with rollback on backend error
+- Async WorkItem command flow with pending operation state and delayed completion
 
 Documentation:
 
@@ -103,10 +104,11 @@ Required Railway env:
 - Frontend: http://localhost:5173
 - Backend health: http://localhost:8080/api/health
 - Backend WorkItems: http://localhost:8080/api/work-items
+- Backend Commands: http://localhost:8080/api/commands/{operationId}
 - Backend external-change demo: POST http://localhost:8080/api/dev/work-items/wi-1/external-change
 - Backend fail-next-request demo: POST http://localhost:8080/api/dev/fail-next-request
 - Swagger: http://localhost:8080/swagger-ui.html
 
 ## Next Development Stage
 
-The next implementation stage is async command flow. Full DEV panel, conflict/stale scenarios, prefetch, and broader tests are planned but intentionally not implemented yet.
+The next implementation stage is the DEV panel for edge cases. Conflict/stale scenarios, prefetch, and broader tests are planned but intentionally not implemented yet.

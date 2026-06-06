@@ -2,7 +2,7 @@
 
 The frontend is a Vite React application written in TypeScript.
 
-Stage 7 adds WorkItem optimistic update and rollback through RTK Query while keeping the application shell and health query visible.
+Stage 8 adds async WorkItem command flow through RTK Query while keeping the application shell and health query visible.
 
 ## Layers
 
@@ -22,9 +22,11 @@ WorkItem server state belongs in `features/workItems/api`. Current typed endpoin
 - optimistic patch updates
 - external-change demo mutation
 - fail-next-request demo mutation
+- async command submission
+- command status polling
 - polling options for active WorkItem queries
 
-Later stages will add async command submission, command status lookup, broader DEV controls, and conflict/stale handling.
+Later stages will add broader DEV controls and conflict/stale handling.
 
 ## UI State
 
@@ -56,8 +58,12 @@ The WorkItem feature is compact and operational:
 - optimistic save shows pending state while backend confirmation is unresolved
 - backend errors undo optimistic cache patches and show rollback feedback
 - a small fail-next-request button arms a one-shot backend failure for rollback demos
+- async command button submits a `complete` command and receives an operation id
+- command status is polled independently while the operation is pending
+- WorkItem `pendingOperation` is shown in list rows and details
+- WorkItem polling brings in the final completed state
 
-Later stages will add prefetch, conflict state, and async command behavior.
+Later stages will add prefetch, conflict state, and broader DEV controls.
 
 ## Stale Response Protection
 
@@ -69,4 +75,4 @@ MUI provides layout, typography, controls, and theme configuration. Components s
 
 ## Module Boundary
 
-The `workItems` frontend feature contains WorkItem API bindings, list UI, detail UI, classic edit controls, optimistic edit controls, polling controls, and minimal DEV demo actions. Shared API transport stays in `shared/api/baseApi.ts`; domain-specific DTOs stay in the feature module.
+The `workItems` frontend feature contains WorkItem API bindings, command API bindings, list UI, detail UI, classic edit controls, optimistic edit controls, polling controls, async command controls, and minimal DEV demo actions. Shared API transport stays in `shared/api/baseApi.ts`; domain-specific DTOs stay in the feature module.

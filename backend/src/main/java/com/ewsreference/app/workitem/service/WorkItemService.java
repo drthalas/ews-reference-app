@@ -68,7 +68,8 @@ public class WorkItemService {
                 candidate.assignee(),
                 candidate.tags(),
                 current.revision() + 1,
-                Instant.now(clock)
+                Instant.now(clock),
+                current.pendingOperation()
         );
         return repository.save(updated);
     }
@@ -91,7 +92,48 @@ public class WorkItemService {
                 current.assignee(),
                 tags,
                 current.revision() + 1,
-                Instant.now(clock)
+                Instant.now(clock),
+                current.pendingOperation()
+        );
+        return repository.save(updated);
+    }
+
+    public WorkItem markPendingOperation(String id, String operationId) {
+        WorkItem current = get(id);
+        if (current.pendingOperation() != null) {
+            throw validation("pendingOperation", "WorkItem already has a pending operation.");
+        }
+
+        WorkItem updated = new WorkItem(
+                current.id(),
+                current.title(),
+                current.status(),
+                current.priority(),
+                current.assignee(),
+                current.tags(),
+                current.revision() + 1,
+                Instant.now(clock),
+                operationId
+        );
+        return repository.save(updated);
+    }
+
+    public WorkItem completePendingOperation(String id, String operationId) {
+        WorkItem current = get(id);
+        if (!Objects.equals(current.pendingOperation(), operationId)) {
+            return current;
+        }
+
+        WorkItem updated = new WorkItem(
+                current.id(),
+                current.title(),
+                WorkItemStatus.DONE,
+                current.priority(),
+                current.assignee(),
+                current.tags(),
+                current.revision() + 1,
+                Instant.now(clock),
+                null
         );
         return repository.save(updated);
     }
@@ -115,7 +157,8 @@ public class WorkItemService {
                 assignee,
                 tags,
                 current.revision(),
-                current.updatedAt()
+                current.updatedAt(),
+                current.pendingOperation()
         );
     }
 

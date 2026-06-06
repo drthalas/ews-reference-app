@@ -16,9 +16,10 @@ EWS Reference App is a local reference app for demonstrating frontend-backend in
 - Stage 6 is done: polling and external data changes.
 - Stage 6.5 is done: Railway demo-deploy preparation for separate frontend and backend services.
 - Stage 7 is done: optimistic update and rollback.
-- Stage 8 is next: async command flow.
+- Stage 8 is done: async command flow.
+- Stage 9 is next: DEV panel for edge cases.
 
-Stage 7 implements an optimistic WorkItem save path through RTK Query cache patching and rollback on backend error. A minimal `/api/dev/fail-next-request` endpoint triggers one forced PATCH failure for rollback demos. Async commands, conflict flows, stale response simulation, and full DEV controls remain out of scope until later stages.
+Stage 8 implements async WorkItem commands. `POST /api/work-items/{id}/commands` returns `202 Accepted` with an `operationId`, the WorkItem exposes `pendingOperation`, `GET /api/commands/{operationId}` returns command status, and delayed in-memory completion updates the WorkItem to `done`. Conflict flows, stale response simulation, and full DEV controls remain out of scope until later stages.
 
 ## Repository Shape
 
@@ -48,22 +49,20 @@ Stage 7 implements an optimistic WorkItem save path through RTK Query cache patc
 - `tags`: ordered list of string labels.
 - `revision`: monotonically increasing server revision.
 - `updatedAt`: server timestamp.
+- `pendingOperation`: optional operation id while an async command is pending.
 
 Implemented main endpoints:
 
 - `GET /api/work-items`
 - `GET /api/work-items/{id}`
 - `PATCH /api/work-items/{id}`
+- `POST /api/work-items/{id}/commands`
+- `GET /api/commands/{operationId}`
 
 Implemented DEV endpoints:
 
 - `POST /api/dev/work-items/{id}/external-change`
 - `POST /api/dev/fail-next-request`
-
-Planned later endpoints:
-
-- `POST /api/work-items/{id}/commands`
-- `GET /api/commands/{operationId}`
 
 Planned DEV endpoints:
 

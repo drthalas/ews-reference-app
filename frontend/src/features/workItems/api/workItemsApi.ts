@@ -1,9 +1,19 @@
 import { baseApi } from '../../../shared/api/baseApi';
-import type { UpdateWorkItemRequest, WorkItem } from '../model/workItem';
+import type {
+  CommandOperation,
+  SubmitWorkItemCommandRequest,
+  UpdateWorkItemRequest,
+  WorkItem,
+} from '../model/workItem';
 
 export type UpdateWorkItemArgs = {
   id: string;
   changes: UpdateWorkItemRequest;
+};
+
+export type SubmitWorkItemCommandArgs = {
+  id: string;
+  command: SubmitWorkItemCommandRequest;
 };
 
 function applyChanges(workItem: WorkItem, changes: UpdateWorkItemRequest) {
@@ -105,12 +115,29 @@ export const workItemsApi = baseApi.injectEndpoints({
         method: 'POST',
       }),
     }),
+    submitWorkItemCommand: builder.mutation<CommandOperation, SubmitWorkItemCommandArgs>({
+      query: ({ id, command }) => ({
+        url: `/work-items/${id}/commands`,
+        method: 'POST',
+        body: command,
+      }),
+      invalidatesTags: (_result, _error, { id }) => [
+        { type: 'WorkItem', id },
+        { type: 'WorkItem', id: 'LIST' },
+      ],
+    }),
+    getCommand: builder.query<CommandOperation, string>({
+      query: (operationId) => `/commands/${operationId}`,
+      providesTags: (_result, _error, operationId) => [{ type: 'Command', id: operationId }],
+    }),
   }),
 });
 
 export const {
+  useGetCommandQuery,
   useGetWorkItemQuery,
   useGetWorkItemsQuery,
+  useSubmitWorkItemCommandMutation,
   useTriggerExternalChangeMutation,
   useTriggerFailNextRequestMutation,
   useUpdateWorkItemOptimisticMutation,

@@ -14,7 +14,7 @@ export function App() {
               EWS Reference App
             </Typography>
             <Typography variant="h6" color="text.secondary" sx={{ maxWidth: 720 }}>
-              Этап 7: optimistic update и rollback
+              Этап 8: async command flow
             </Typography>
           </Stack>
 

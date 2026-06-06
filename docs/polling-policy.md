@@ -35,6 +35,8 @@ Polling should not hide an active optimistic update, pending command, or conflic
 
 Stage 7 pauses polling while an optimistic WorkItem save is pending. This is a narrow protection against ordinary polling visually overwriting optimistic cache patches before the backend response. Full stale response detection remains planned for the conflict/stale stage.
 
+Stage 8 uses WorkItem polling to bring in final async command state after delayed backend completion. Command status is also polled separately through `GET /api/commands/{operationId}` while an operation is pending.
+
 ## DEV Support
 
 Implemented in Stage 6:

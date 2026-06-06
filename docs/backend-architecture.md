@@ -2,7 +2,7 @@
 
 The backend is a Java 21 Spring Boot service named `ews-reference-backend`.
 
-Stage 7 includes the WorkItem runtime API, shared API error types, and minimal local-only DEV helpers for external-change and rollback demos.
+Stage 8 includes the WorkItem runtime API, shared API error types, minimal local-only DEV helpers, and an in-memory async command flow.
 
 ## Package Layout
 
@@ -10,6 +10,7 @@ Stage 7 includes the WorkItem runtime API, shared API error types, and minimal l
 - `health` contains the health endpoint.
 - `common.api` contains shared API DTOs.
 - `workitem` contains the WorkItem domain API.
+- `command` contains async command APIs, operation state, and delayed completion logic.
 - `devtools` contains local-only simulation endpoints.
 
 ## WorkItem Module
@@ -38,16 +39,13 @@ Implemented main endpoints:
 - `GET /api/work-items`
 - `GET /api/work-items/{id}`
 - `PATCH /api/work-items/{id}`
+- `POST /api/work-items/{id}/commands`
+- `GET /api/commands/{operationId}`
 
 Implemented DEV endpoints:
 
 - `POST /api/dev/work-items/{id}/external-change`
 - `POST /api/dev/fail-next-request`
-
-Planned later endpoints:
-
-- `POST /api/work-items/{id}/commands`
-- `GET /api/commands/{operationId}`
 
 Planned DEV endpoints:
 
@@ -70,11 +68,15 @@ Expected HTTP mappings:
 
 `POST /api/dev/fail-next-request` arms one controlled `DEV_FORCED_FAILURE` response for the next WorkItem PATCH and then resets.
 
+`GET /api/commands/{operationId}` returns `404 COMMAND_NOT_FOUND` for unknown operation ids.
+
 ## Storage
 
 WorkItem data is stored in memory. This keeps local demos deterministic and avoids database setup.
 
-The in-memory repository is accessed through explicit service methods. The external-change helper reuses `WorkItemService` so revision and timestamp handling stays consistent with normal server-side updates.
+The in-memory repository is accessed through explicit service methods. The external-change helper and async command completion reuse `WorkItemService` so revision and timestamp handling stays consistent with normal server-side updates.
+
+Command operations are also stored in memory. The first async command implementation uses a single-process scheduled executor for delayed completion; there is no external queue, broker, Redis, or worker.
 
 ## Documentation
 

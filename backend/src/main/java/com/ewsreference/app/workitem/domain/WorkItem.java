@@ -11,7 +11,8 @@ public record WorkItem(
         String assignee,
         List<String> tags,
         long revision,
-        Instant updatedAt
+        Instant updatedAt,
+        String pendingOperation
 ) {
     public WorkItem {
         tags = List.copyOf(tags);

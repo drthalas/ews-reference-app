@@ -10,8 +10,8 @@
 6. Polling - done.
 6.5. Railway demo deploy - done.
 7. Optimistic update - done.
-8. Async command flow - next.
-9. DEV panel - planned.
+8. Async command flow - done.
+9. DEV panel - next.
 10. Conflict and stale scenarios - planned.
 11. Prefetch - planned.
 12. Tests - planned.
@@ -106,11 +106,19 @@ Completed implementation stage:
 
 ### 8. Async Command Flow
 
-Next stage: add command submission and status lookup through `POST /api/work-items/{id}/commands` and `GET /api/commands/{operationId}`.
+Completed implementation stage:
+
+- added command submission through `POST /api/work-items/{id}/commands`
+- returned `202 Accepted` with `operationId`
+- added command status lookup through `GET /api/commands/{operationId}`
+- added WorkItem `pendingOperation`
+- added delayed in-memory completion for the `complete` command
+- added frontend pending badge and command status polling
+- used WorkItem polling to receive the final completed state
 
 ### 9. DEV Panel
 
-Add local-only controls and `/api/dev` endpoints for latency, failures, reset, external changes, stale responses, and conflicts.
+Next stage: add local-only controls and `/api/dev` endpoints for latency, failures, reset, external changes, stale responses, and conflicts.
 
 ### 10. Conflict And Stale Scenarios
 

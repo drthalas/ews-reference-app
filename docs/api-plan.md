@@ -22,7 +22,8 @@ Implemented response shape:
   "assignee": "Alex",
   "tags": ["intake", "backend"],
   "revision": 1,
-  "updatedAt": "2026-06-06T00:00:00Z"
+  "updatedAt": "2026-06-06T00:00:00Z",
+  "pendingOperation": null
 }
 ```
 
@@ -72,18 +73,17 @@ Empty or no-op PATCH payloads return the current WorkItem without incrementing `
 
 ### `POST /api/work-items/{id}/commands`
 
-Planned for a later stage. Submits an async command for a WorkItem and returns an operation identifier.
+Implemented. Submits an async command for a WorkItem and returns `202 Accepted` with an operation identifier.
 
-Planned request:
+Implemented request:
 
 ```json
 {
-  "type": "complete",
-  "expectedRevision": 3
+  "type": "complete"
 }
 ```
 
-Planned response:
+Implemented response:
 
 ```json
 {
@@ -93,9 +93,16 @@ Planned response:
 }
 ```
 
+Behavior:
+
+- unknown WorkItem ids return `404` with `WORK_ITEM_NOT_FOUND`;
+- invalid command payloads return `400` with `VALIDATION_ERROR`;
+- accepted commands set WorkItem `pendingOperation` to the returned `operationId`;
+- delayed completion clears `pendingOperation`, sets status to `done`, increments `revision`, and updates `updatedAt`.
+
 ### `GET /api/commands/{operationId}`
 
-Planned for a later stage. Returns command status.
+Implemented. Returns command status.
 
 ```json
 {
@@ -166,6 +173,6 @@ Domain endpoints return the canonical error shape:
 }
 ```
 
-Implemented codes include `WORK_ITEM_NOT_FOUND`, `VALIDATION_ERROR`, `DEV_FORCED_FAILURE`, and `INTERNAL_ERROR`.
+Implemented codes include `WORK_ITEM_NOT_FOUND`, `COMMAND_NOT_FOUND`, `VALIDATION_ERROR`, `DEV_FORCED_FAILURE`, and `INTERNAL_ERROR`.
 
-Planned later codes include `WORK_ITEM_REVISION_CONFLICT`, `COMMAND_NOT_FOUND`, `COMMAND_FAILED`, and `DEV_SIMULATION_ERROR`.
+Planned later codes include `WORK_ITEM_REVISION_CONFLICT`, `COMMAND_FAILED`, and `DEV_SIMULATION_ERROR`.

@@ -1,6 +1,6 @@
 # Async Command Flow
 
-Async command flow is planned for a later stage and is not implemented in the scaffold.
+Async command flow is implemented for WorkItem `complete` commands in Stage 8.
 
 ## Intended Flow
 
@@ -10,7 +10,7 @@ Async command flow is planned for a later stage and is not implemented in the sc
 4. Backend returns completed or failed state.
 5. Frontend reconciles affected WorkItem data.
 
-## Planned API
+## Implemented API
 
 - `POST /api/work-items/{id}/commands`
 - `GET /api/commands/{operationId}`
@@ -19,8 +19,7 @@ Command submission request:
 
 ```json
 {
-  "type": "complete",
-  "expectedRevision": 3
+  "type": "complete"
 }
 ```
 
@@ -33,6 +32,8 @@ Initial response:
   "workItemId": "wi-1"
 }
 ```
+
+The submit endpoint returns `202 Accepted`.
 
 Status response:
 
@@ -49,14 +50,16 @@ Status response:
 ## State Rules
 
 - The backend owns command status.
-- The frontend may show local pending UI while status is `pending`.
-- Completed commands should trigger refresh or direct cache update for the affected WorkItem.
+- The frontend shows pending UI while status is `pending`.
+- The WorkItem response includes `pendingOperation` while a command is active.
+- Completed commands clear `pendingOperation`, set WorkItem status to `done`, increment revision, and refresh `updatedAt`.
+- WorkItem polling brings the final WorkItem state into the UI.
 - Failed commands should expose a clear row-level or detail-level error.
 - Conflicting commands should follow conflict handling rules.
 
 ## DEV Support
 
-`POST /api/dev/fail-next-command` should force the next command to fail. This keeps failure behavior deterministic for demos.
+`POST /api/dev/fail-next-command` is still planned for a later DEV panel stage. Stage 8 implements the successful delayed command flow only.
 
 ## Boundaries
 
