@@ -11,8 +11,8 @@
 6.5. Railway demo deploy - done.
 7. Optimistic update - done.
 8. Async command flow - done.
-9. DEV panel - next.
-10. Conflict and stale scenarios - planned.
+9. DEV panel - done.
+10. Conflict and stale scenarios - next.
 11. Prefetch - planned.
 12. Tests - planned.
 13. Final demo documentation - planned.
@@ -118,11 +118,20 @@ Completed implementation stage:
 
 ### 9. DEV Panel
 
-Next stage: add local-only controls and `/api/dev` endpoints for latency, failures, reset, external changes, stale responses, and conflicts.
+Completed implementation stage:
+
+- added local-only DEV settings for response delay, stale response mode, and conflict mode
+- added `/api/dev/settings`, `/api/dev/reset`, `/api/dev/fail-next-command`, `/api/dev/trigger-stale-response`, and `/api/dev/trigger-conflict`
+- kept existing external-change and fail-next-request endpoints under the DEV boundary
+- added one-shot async command failure where the command is accepted and later completes as failed
+- added one-shot conflict where the next PATCH returns `409 DEV_CONFLICT`
+- added one-shot stale response where the next WorkItem list/detail response returns an older revision
+- added frontend `features/devPanel` with a right-side MUI drawer for all DEV controls
+- kept full conflict resolution UI and stale response protection out of scope
 
 ### 10. Conflict And Stale Scenarios
 
-Wire deterministic demos for revision conflict and stale polling protection.
+Next stage: wire deterministic conflict handling and stale polling protection.
 
 ### 11. Prefetch
 

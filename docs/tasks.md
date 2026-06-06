@@ -15,7 +15,8 @@ This file is the compact execution map for future work.
 | 6.5. Railway demo deploy | Done | Railway-ready backend/frontend runtime config and manual deploy runbook. |
 | 7. Optimistic update | Done | Optimistic mutation, pending state, rollback, and failed-change feedback. |
 | 8. Async command flow | Done | Command submission, operation status, delayed completion, and pending operation UI. |
-| 9. DEV panel | Next | Local controls for delays, failures, reset, external change, stale response, and conflict demos. |
+| 9. DEV panel | Done | Local controls for delays, failures, reset, external change, stale response, and conflict demos. |
+| 10. Conflict and stale scenarios | Next | Deterministic conflict handling and stale response protection. |
 
 ## Execution Order
 
@@ -109,6 +110,20 @@ This file is the compact execution map for future work.
 - Added RTK Query `submitWorkItemCommand` and `getCommand` endpoints.
 - Added frontend command submit control, pending badge, command status polling, and final-state polling behavior.
 - Kept Redis, external queues, WebSocket, auth, conflict handling, and full DEV panel out of scope.
+
+## Completed Stage 9 Checklist
+
+- Added unified DEV settings with `responseDelayMs`, `failNextRequest`, `failNextCommand`, `staleResponseMode`, `conflictMode`, `lastResetAt`, and `lastDevAction`.
+- Added `GET /api/dev/settings` and `PUT /api/dev/settings`.
+- Added `POST /api/dev/reset` to restore WorkItem seed data, clear command operations, clear pending operations, and reset DEV flags.
+- Kept existing `POST /api/dev/work-items/{id}/external-change` and `POST /api/dev/fail-next-request` behavior.
+- Added `POST /api/dev/fail-next-command`; the next async command is accepted, remains pending briefly, then completes as `failed` and clears `pendingOperation`.
+- Added `POST /api/dev/trigger-stale-response`; the next eligible WorkItem list/detail read returns a controlled older revision response.
+- Added `POST /api/dev/trigger-conflict`; the next WorkItem PATCH returns `409 DEV_CONFLICT`.
+- Added backend tests for settings, reset, fail-next-command, conflict, stale response, delay validation, fail-next-request, and external-change.
+- Added `features/devPanel` frontend module with RTK Query endpoints and a right-side MUI DEV drawer.
+- Moved DEV controls out of the normal WorkItem details actions into the DEV panel.
+- Kept full conflict resolution UI and stale response protection out of scope for Stage 10.
 
 ## Future Implementation Guardrails
 

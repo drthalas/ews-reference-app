@@ -14,7 +14,7 @@ export function App() {
               EWS Reference App
             </Typography>
             <Typography variant="h6" color="text.secondary" sx={{ maxWidth: 720 }}>
-              Этап 8: async command flow
+              Этап 9: DEV panel для edge cases
             </Typography>
           </Stack>
 

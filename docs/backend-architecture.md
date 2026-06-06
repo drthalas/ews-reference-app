@@ -2,7 +2,7 @@
 
 The backend is a Java 21 Spring Boot service named `ews-reference-backend`.
 
-Stage 8 includes the WorkItem runtime API, shared API error types, minimal local-only DEV helpers, and an in-memory async command flow.
+Stage 9 includes the WorkItem runtime API, shared API error types, local-only DEV controls, and an in-memory async command flow.
 
 ## Package Layout
 
@@ -44,14 +44,11 @@ Implemented main endpoints:
 
 Implemented DEV endpoints:
 
-- `POST /api/dev/work-items/{id}/external-change`
-- `POST /api/dev/fail-next-request`
-
-Planned DEV endpoints:
-
 - `GET /api/dev/settings`
 - `PUT /api/dev/settings`
 - `POST /api/dev/reset`
+- `POST /api/dev/work-items/{id}/external-change`
+- `POST /api/dev/fail-next-request`
 - `POST /api/dev/fail-next-command`
 - `POST /api/dev/trigger-stale-response`
 - `POST /api/dev/trigger-conflict`
@@ -68,6 +65,12 @@ Expected HTTP mappings:
 
 `POST /api/dev/fail-next-request` arms one controlled `DEV_FORCED_FAILURE` response for the next WorkItem PATCH and then resets.
 
+`POST /api/dev/trigger-conflict` arms one controlled `409 DEV_CONFLICT` response for the next WorkItem PATCH and then resets. The response includes `workItemId`, `clientRevision`, and `serverRevision` details for Stage 10 conflict UI work.
+
+`POST /api/dev/fail-next-command` lets the next accepted async command complete as `failed`; the WorkItem `pendingOperation` is cleared and the WorkItem status is not changed to `done`.
+
+`POST /api/dev/trigger-stale-response` makes the next eligible WorkItem list/detail read return a controlled older revision. Full stale response protection remains planned for Stage 10.
+
 `GET /api/commands/{operationId}` returns `404 COMMAND_NOT_FOUND` for unknown operation ids.
 
 ## Storage
@@ -76,7 +79,9 @@ WorkItem data is stored in memory. This keeps local demos deterministic and avoi
 
 The in-memory repository is accessed through explicit service methods. The external-change helper and async command completion reuse `WorkItemService` so revision and timestamp handling stays consistent with normal server-side updates.
 
-Command operations are also stored in memory. The first async command implementation uses a single-process scheduled executor for delayed completion; there is no external queue, broker, Redis, or worker.
+Command operations are also stored in memory. The async command implementation uses a single-process scheduled executor for delayed completion; there is no external queue, broker, Redis, or worker.
+
+`POST /api/dev/reset` clears command operations, restores deterministic WorkItem seed data, clears pending operations, and resets DEV settings.
 
 ## Documentation
 

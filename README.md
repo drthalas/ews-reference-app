@@ -4,7 +4,7 @@ EWS Reference App is a reference application for demonstrating common frontend-b
 
 ## Current Status
 
-Stages 1 through 8 are complete. Stage 9 is next.
+Stages 1 through 9 are complete. Stage 10 is next.
 
 Implemented:
 
@@ -22,6 +22,7 @@ Implemented:
 - Railway demo-deploy preparation for separate frontend and backend services
 - Optimistic WorkItem save flow with rollback on backend error
 - Async WorkItem command flow with pending operation state and delayed completion
+- DEV panel for backend-controlled edge cases: delay, failures, external change, stale response, conflict, and reset
 
 Documentation:
 
@@ -105,10 +106,15 @@ Required Railway env:
 - Backend health: http://localhost:8080/api/health
 - Backend WorkItems: http://localhost:8080/api/work-items
 - Backend Commands: http://localhost:8080/api/commands/{operationId}
+- Backend DEV settings: http://localhost:8080/api/dev/settings
 - Backend external-change demo: POST http://localhost:8080/api/dev/work-items/wi-1/external-change
 - Backend fail-next-request demo: POST http://localhost:8080/api/dev/fail-next-request
+- Backend fail-next-command demo: POST http://localhost:8080/api/dev/fail-next-command
+- Backend trigger-stale-response demo: POST http://localhost:8080/api/dev/trigger-stale-response
+- Backend trigger-conflict demo: POST http://localhost:8080/api/dev/trigger-conflict
+- Backend reset demo state: POST http://localhost:8080/api/dev/reset
 - Swagger: http://localhost:8080/swagger-ui.html
 
 ## Next Development Stage
 
-The next implementation stage is the DEV panel for edge cases. Conflict/stale scenarios, prefetch, and broader tests are planned but intentionally not implemented yet.
+The next implementation stage is conflict and stale response handling. Prefetch and broader tests are planned but intentionally not implemented yet.

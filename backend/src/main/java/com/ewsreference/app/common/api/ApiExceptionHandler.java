@@ -1,7 +1,9 @@
 package com.ewsreference.app.common.api;
 
 import com.ewsreference.app.command.service.CommandNotFoundException;
+import com.ewsreference.app.devtools.service.DevConflictException;
 import com.ewsreference.app.devtools.service.DevForcedFailureException;
+import com.ewsreference.app.devtools.service.DevSettingsValidationException;
 import com.ewsreference.app.workitem.service.ValidationException;
 import com.ewsreference.app.workitem.service.WorkItemNotFoundException;
 import java.time.Instant;
@@ -44,11 +46,31 @@ public class ApiExceptionHandler {
         );
     }
 
+    @ExceptionHandler(DevSettingsValidationException.class)
+    public ResponseEntity<ApiError> handleDevSettingsValidation(DevSettingsValidationException exception) {
+        return error(
+                HttpStatus.BAD_REQUEST,
+                "VALIDATION_ERROR",
+                exception.getMessage(),
+                exception.details()
+        );
+    }
+
     @ExceptionHandler(DevForcedFailureException.class)
     public ResponseEntity<ApiError> handleDevForcedFailure(DevForcedFailureException exception) {
         return error(
                 HttpStatus.INTERNAL_SERVER_ERROR,
                 "DEV_FORCED_FAILURE",
+                exception.getMessage(),
+                exception.details()
+        );
+    }
+
+    @ExceptionHandler(DevConflictException.class)
+    public ResponseEntity<ApiError> handleDevConflict(DevConflictException exception) {
+        return error(
+                HttpStatus.CONFLICT,
+                "DEV_CONFLICT",
                 exception.getMessage(),
                 exception.details()
         );

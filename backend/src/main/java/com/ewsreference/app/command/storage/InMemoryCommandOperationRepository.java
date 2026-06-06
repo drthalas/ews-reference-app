@@ -20,4 +20,9 @@ public class InMemoryCommandOperationRepository implements CommandOperationRepos
         operations.put(operation.operationId(), operation);
         return operation;
     }
+
+    @Override
+    public void reset() {
+        operations.clear();
+    }
 }

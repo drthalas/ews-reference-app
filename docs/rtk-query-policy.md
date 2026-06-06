@@ -2,7 +2,7 @@
 
 RTK Query is the default owner of server state.
 
-The current frontend has a shared `baseApi`, a health endpoint, WorkItem query endpoints, polling options, server-confirmed and optimistic WorkItem update mutations, async command endpoints, and minimal DEV demo mutations.
+The current frontend has a shared `baseApi`, a health endpoint, WorkItem query endpoints, polling options, server-confirmed and optimistic WorkItem update mutations, async command endpoints, and separate DEV panel mutations.
 
 ## Rules
 
@@ -30,12 +30,21 @@ WorkItem endpoints use tags that support narrow invalidation:
 - `updateWorkItemOptimistic`: `PATCH /api/work-items/{id}`
 - `submitWorkItemCommand`: `POST /api/work-items/{id}/commands`
 - `getCommand`: `GET /api/commands/{operationId}`
+
+## Implemented DEV Panel Endpoints
+
+- `getDevSettings`: `GET /api/dev/settings`
+- `updateDevSettings`: `PUT /api/dev/settings`
+- `resetDevState`: `POST /api/dev/reset`
 - `triggerExternalChange`: `POST /api/dev/work-items/{id}/external-change`
-- `triggerFailNextRequest`: `POST /api/dev/fail-next-request`
+- `failNextRequest`: `POST /api/dev/fail-next-request`
+- `failNextCommand`: `POST /api/dev/fail-next-command`
+- `triggerStaleResponse`: `POST /api/dev/trigger-stale-response`
+- `triggerConflict`: `POST /api/dev/trigger-conflict`
 
 ## Cache And Reconciliation
 
-WorkItem list, detail, server-confirmed update, optimistic update, async command, external-change demo, and fail-next-request demo flows are modeled through RTK Query endpoints. Prefetch flows should also be modeled through RTK Query when their stages begin.
+WorkItem list, detail, server-confirmed update, optimistic update, and async command flows are modeled through RTK Query endpoints. DEV panel actions are modeled through a separate feature API that shares the same `baseApi`. Prefetch flows should also be modeled through RTK Query when their stages begin.
 
 Successful server-confirmed updates invalidate the relevant item and list tags so active list/detail queries refetch server-confirmed data. Optimistic updates should use RTK Query cache patching and define rollback behavior before implementation.
 

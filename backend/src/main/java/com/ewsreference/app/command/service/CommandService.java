@@ -5,6 +5,7 @@ import com.ewsreference.app.command.domain.CommandOperation;
 import com.ewsreference.app.command.domain.CommandStatus;
 import com.ewsreference.app.command.domain.CommandType;
 import com.ewsreference.app.command.storage.CommandOperationRepository;
+import com.ewsreference.app.devtools.service.DevFailureService;
 import com.ewsreference.app.workitem.domain.WorkItem;
 import com.ewsreference.app.workitem.service.ValidationException;
 import com.ewsreference.app.workitem.service.WorkItemService;
@@ -30,15 +31,26 @@ public class CommandService {
     private final Clock clock;
     private final CommandOperationRepository repository;
     private final WorkItemService workItemService;
+    private final DevFailureService devFailureService;
 
     @Autowired
-    public CommandService(CommandOperationRepository repository, WorkItemService workItemService) {
-        this(repository, workItemService, Clock.systemUTC());
+    public CommandService(
+            CommandOperationRepository repository,
+            WorkItemService workItemService,
+            DevFailureService devFailureService
+    ) {
+        this(repository, workItemService, devFailureService, Clock.systemUTC());
     }
 
-    CommandService(CommandOperationRepository repository, WorkItemService workItemService, Clock clock) {
+    CommandService(
+            CommandOperationRepository repository,
+            WorkItemService workItemService,
+            DevFailureService devFailureService,
+            Clock clock
+    ) {
         this.repository = repository;
         this.workItemService = workItemService;
+        this.devFailureService = devFailureService;
         this.clock = clock;
     }
 
@@ -48,9 +60,9 @@ public class CommandService {
             throw validation("type", "Command type must be complete.");
         }
 
-        workItemService.get(workItemId);
         String operationId = "op-" + operationSequence.getAndIncrement();
         workItemService.markPendingOperation(workItemId, operationId);
+        boolean failOnCompletion = devFailureService.consumeFailNextCommand();
         CommandOperation operation = repository.save(new CommandOperation(
                 operationId,
                 CommandStatus.PENDING,
@@ -62,7 +74,7 @@ public class CommandService {
         ));
 
         executor.schedule(
-                () -> completeWorkItemCommand(operationId),
+                () -> completeWorkItemCommand(operationId, failOnCompletion),
                 COMPLETION_DELAY.toMillis(),
                 TimeUnit.MILLISECONDS
         );
@@ -74,13 +86,32 @@ public class CommandService {
                 .orElseThrow(() -> new CommandNotFoundException(operationId));
     }
 
-    private void completeWorkItemCommand(String operationId) {
+    public void reset() {
+        repository.reset();
+        operationSequence.set(1);
+    }
+
+    private void completeWorkItemCommand(String operationId, boolean failOnCompletion) {
         CommandOperation operation = get(operationId);
         if (operation.status() != CommandStatus.PENDING) {
             return;
         }
 
         try {
+            if (failOnCompletion) {
+                workItemService.clearPendingOperation(operation.workItemId(), operationId);
+                repository.save(new CommandOperation(
+                        operation.operationId(),
+                        CommandStatus.FAILED,
+                        operation.workItemId(),
+                        null,
+                        "DEV_FORCED_COMMAND_FAILURE: DEV forced failure for async command completion.",
+                        operation.createdAt(),
+                        Instant.now(clock)
+                ));
+                return;
+            }
+
             WorkItem updated = workItemService.completePendingOperation(operation.workItemId(), operationId);
             repository.save(new CommandOperation(
                     operation.operationId(),

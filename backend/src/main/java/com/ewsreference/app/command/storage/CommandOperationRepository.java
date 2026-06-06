@@ -8,4 +8,6 @@ public interface CommandOperationRepository {
     Optional<CommandOperation> findById(String operationId);
 
     CommandOperation save(CommandOperation operation);
+
+    void reset();
 }

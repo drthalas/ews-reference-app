@@ -103,18 +103,6 @@ export const workItemsApi = baseApi.injectEndpoints({
         }
       },
     }),
-    triggerExternalChange: builder.mutation<WorkItem, string>({
-      query: (id) => ({
-        url: `/dev/work-items/${id}/external-change`,
-        method: 'POST',
-      }),
-    }),
-    triggerFailNextRequest: builder.mutation<{ failNextRequest: boolean }, void>({
-      query: () => ({
-        url: '/dev/fail-next-request',
-        method: 'POST',
-      }),
-    }),
     submitWorkItemCommand: builder.mutation<CommandOperation, SubmitWorkItemCommandArgs>({
       query: ({ id, command }) => ({
         url: `/work-items/${id}/commands`,
@@ -138,8 +126,6 @@ export const {
   useGetWorkItemQuery,
   useGetWorkItemsQuery,
   useSubmitWorkItemCommandMutation,
-  useTriggerExternalChangeMutation,
-  useTriggerFailNextRequestMutation,
   useUpdateWorkItemOptimisticMutation,
   useUpdateWorkItemMutation,
 } = workItemsApi;

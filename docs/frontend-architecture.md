@@ -2,7 +2,7 @@
 
 The frontend is a Vite React application written in TypeScript.
 
-Stage 8 adds async WorkItem command flow through RTK Query while keeping the application shell and health query visible.
+Stage 9 adds a separate DEV panel feature through RTK Query while keeping the normal WorkItem flows visible.
 
 ## Layers
 
@@ -20,13 +20,22 @@ WorkItem server state belongs in `features/workItems/api`. Current typed endpoin
 - detail retrieval
 - server-confirmed patch updates
 - optimistic patch updates
-- external-change demo mutation
-- fail-next-request demo mutation
 - async command submission
 - command status polling
 - polling options for active WorkItem queries
 
-Later stages will add broader DEV controls and conflict/stale handling.
+DEV controls belong in `features/devPanel/api`. Current typed endpoints cover:
+
+- `getDevSettings`
+- `updateDevSettings`
+- `resetDevState`
+- `triggerExternalChange`
+- `failNextRequest`
+- `failNextCommand`
+- `triggerStaleResponse`
+- `triggerConflict`
+
+Later stages will add full conflict/stale handling.
 
 ## UI State
 
@@ -52,18 +61,17 @@ The WorkItem feature is compact and operational:
 - save waits for backend confirmation before leaving edit mode
 - polling can be toggled on or off with a 3000 ms interval
 - selected details prefer the polled list item when present, so external changes become visible without manual refresh
-- the external-change demo button calls the backend `/api/dev` helper and does not create optimistic local data
 - edit mode has separate server-confirmed and optimistic save actions
 - optimistic save patches WorkItem list and detail caches immediately
 - optimistic save shows pending state while backend confirmation is unresolved
 - backend errors undo optimistic cache patches and show rollback feedback
-- a small fail-next-request button arms a one-shot backend failure for rollback demos
 - async command button submits a `complete` command and receives an operation id
 - command status is polled independently while the operation is pending
 - WorkItem `pendingOperation` is shown in list rows and details
 - WorkItem polling brings in the final completed state
+- a separate right-side DEV panel exposes backend-controlled edge-case actions
 
-Later stages will add prefetch, conflict state, and broader DEV controls.
+Later stages will add prefetch behavior, conflict UI, and stale response protection.
 
 ## Stale Response Protection
 
@@ -75,4 +83,4 @@ MUI provides layout, typography, controls, and theme configuration. Components s
 
 ## Module Boundary
 
-The `workItems` frontend feature contains WorkItem API bindings, command API bindings, list UI, detail UI, classic edit controls, optimistic edit controls, polling controls, async command controls, and minimal DEV demo actions. Shared API transport stays in `shared/api/baseApi.ts`; domain-specific DTOs stay in the feature module.
+The `workItems` frontend feature contains WorkItem API bindings, command API bindings, list UI, detail UI, classic edit controls, optimistic edit controls, polling controls, and async command controls. The `devPanel` feature contains DEV API bindings, settings controls, one-shot edge-case actions, and backend reset controls. Shared API transport stays in `shared/api/baseApi.ts`; domain-specific DTOs stay in the feature module.

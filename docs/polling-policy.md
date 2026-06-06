@@ -47,6 +47,9 @@ Implemented in Stage 7:
 
 - `POST /api/dev/fail-next-request`: makes the next WorkItem PATCH return `DEV_FORCED_FAILURE` once, then resets.
 
-Planned later:
+Implemented in Stage 9:
 
-- `POST /api/dev/trigger-stale-response`: prepares a stale response for the next eligible WorkItem query. The UI should show that stale data was ignored without degrading normal state.
+- `GET /api/dev/settings` and `PUT /api/dev/settings`: expose response delay and stale-response mode controls.
+- `POST /api/dev/trigger-stale-response`: prepares a stale response for the next eligible WorkItem query.
+
+The Stage 9 frontend exposes these controls in the DEV panel. The Stage 10 frontend should show that stale data was ignored without degrading normal state.

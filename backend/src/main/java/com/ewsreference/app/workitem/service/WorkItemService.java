@@ -1,6 +1,7 @@
 package com.ewsreference.app.workitem.service;
 
 import com.ewsreference.app.devtools.service.DevFailureService;
+import com.ewsreference.app.devtools.service.DevConflictException;
 import com.ewsreference.app.devtools.service.DevForcedFailureException;
 import com.ewsreference.app.workitem.api.UpdateWorkItemRequest;
 import com.ewsreference.app.workitem.domain.WorkItem;
@@ -40,20 +41,41 @@ public class WorkItemService {
     }
 
     public List<WorkItem> list() {
-        return repository.findAll();
+        devFailureService.applyResponseDelay();
+        List<WorkItem> items = repository.findAll();
+        if (!devFailureService.shouldReturnStaleResponse()) {
+            return items;
+        }
+        devFailureService.recordAction("stale WorkItem list response returned");
+        return items.stream().map(this::toStaleResponse).toList();
     }
 
     public WorkItem get(String id) {
+        devFailureService.applyResponseDelay();
+        WorkItem current = findRequired(id);
+        if (devFailureService.shouldReturnStaleResponse()) {
+            devFailureService.recordAction("stale WorkItem detail response returned");
+            return toStaleResponse(current);
+        }
+        return current;
+    }
+
+    private WorkItem findRequired(String id) {
         return repository.findById(id)
                 .orElseThrow(() -> new WorkItemNotFoundException(id));
     }
 
     public WorkItem update(String id, UpdateWorkItemRequest request) {
+        devFailureService.applyResponseDelay();
         if (devFailureService.consumeFailNextPatch()) {
             throw new DevForcedFailureException(id);
         }
 
-        WorkItem current = get(id);
+        WorkItem current = findRequired(id);
+        if (devFailureService.consumePatchConflict()) {
+            throw new DevConflictException(id, current.revision());
+        }
+
         WorkItem candidate = applyPatch(current, request);
 
         if (sameData(current, candidate)) {
@@ -75,7 +97,8 @@ public class WorkItemService {
     }
 
     public WorkItem applyExternalChange(String id) {
-        WorkItem current = get(id);
+        devFailureService.applyResponseDelay();
+        WorkItem current = findRequired(id);
         WorkItemStatus nextStatus = current.status() == WorkItemStatus.BLOCKED
                 ? WorkItemStatus.IN_PROGRESS
                 : WorkItemStatus.BLOCKED;
@@ -99,7 +122,7 @@ public class WorkItemService {
     }
 
     public WorkItem markPendingOperation(String id, String operationId) {
-        WorkItem current = get(id);
+        WorkItem current = findRequired(id);
         if (current.pendingOperation() != null) {
             throw validation("pendingOperation", "WorkItem already has a pending operation.");
         }
@@ -119,7 +142,7 @@ public class WorkItemService {
     }
 
     public WorkItem completePendingOperation(String id, String operationId) {
-        WorkItem current = get(id);
+        WorkItem current = findRequired(id);
         if (!Objects.equals(current.pendingOperation(), operationId)) {
             return current;
         }
@@ -136,6 +159,30 @@ public class WorkItemService {
                 null
         );
         return repository.save(updated);
+    }
+
+    public WorkItem clearPendingOperation(String id, String operationId) {
+        WorkItem current = findRequired(id);
+        if (!Objects.equals(current.pendingOperation(), operationId)) {
+            return current;
+        }
+
+        WorkItem updated = new WorkItem(
+                current.id(),
+                current.title(),
+                current.status(),
+                current.priority(),
+                current.assignee(),
+                current.tags(),
+                current.revision() + 1,
+                Instant.now(clock),
+                null
+        );
+        return repository.save(updated);
+    }
+
+    public void reset() {
+        repository.reset();
     }
 
     private WorkItem applyPatch(WorkItem current, UpdateWorkItemRequest request) {
@@ -168,6 +215,20 @@ public class WorkItemService {
                 && current.priority() == candidate.priority()
                 && Objects.equals(current.assignee(), candidate.assignee())
                 && Objects.equals(current.tags(), candidate.tags());
+    }
+
+    private WorkItem toStaleResponse(WorkItem current) {
+        return new WorkItem(
+                current.id(),
+                current.title(),
+                current.status(),
+                current.priority(),
+                current.assignee(),
+                current.tags(),
+                Math.max(0, current.revision() - 1),
+                current.updatedAt().minusSeconds(1),
+                current.pendingOperation()
+        );
     }
 
     private String parseTitle(JsonNode node) {

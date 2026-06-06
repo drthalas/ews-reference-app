@@ -36,6 +36,12 @@ public class InMemoryWorkItemRepository implements WorkItemRepository {
         return workItem;
     }
 
+    @Override
+    public void reset() {
+        items.clear();
+        seed();
+    }
+
     private void seed() {
         Instant seedTime = Instant.parse("2026-06-06T00:00:00Z");
         save(new WorkItem(

@@ -146,14 +146,47 @@ Behavior:
 - following PATCH requests behave normally;
 - normal successful PATCH behavior still increments `revision` on actual change.
 
-Planned later DEV endpoints:
+### `GET /api/dev/settings`
 
-- `GET /api/dev/settings`: returns active simulation settings.
-- `PUT /api/dev/settings`: replaces simulation settings such as latency and automatic failure flags.
-- `POST /api/dev/reset`: resets in-memory demo data and settings.
-- `POST /api/dev/fail-next-command`: makes the next async command fail.
-- `POST /api/dev/trigger-stale-response`: returns an older revision on the next eligible request.
-- `POST /api/dev/trigger-conflict`: prepares a revision mismatch for conflict demonstration.
+Implemented. Returns active local-only DEV simulation settings.
+
+```json
+{
+  "responseDelayMs": 0,
+  "failNextRequest": false,
+  "failNextCommand": false,
+  "staleResponseMode": false,
+  "conflictMode": false,
+  "lastResetAt": "2026-06-06T00:00:00Z",
+  "lastDevAction": "initial seed"
+}
+```
+
+### `PUT /api/dev/settings`
+
+Implemented. Updates:
+
+- `responseDelayMs`: `0` through `5000`.
+- `staleResponseMode`: when enabled, eligible WorkItem list/detail reads return controlled older revisions.
+- `conflictMode`: when enabled, WorkItem PATCH returns `409 DEV_CONFLICT`.
+
+Invalid delay values return `400 VALIDATION_ERROR`.
+
+### `POST /api/dev/reset`
+
+Implemented. Restores deterministic WorkItem seed data, clears command operations, clears pending operations, and resets DEV settings/flags.
+
+### `POST /api/dev/fail-next-command`
+
+Implemented. Arms a one-shot async command failure. The next `POST /api/work-items/{id}/commands` is still accepted and returns a pending operation. Delayed completion then stores the command as `failed`, clears the WorkItem `pendingOperation`, leaves the WorkItem status unchanged, and writes an operation error containing `DEV_FORCED_COMMAND_FAILURE`.
+
+### `POST /api/dev/trigger-stale-response`
+
+Implemented. Arms a one-shot stale WorkItem read. The next eligible `GET /api/work-items` or `GET /api/work-items/{id}` returns a controlled older revision response. Full frontend stale-response protection remains planned for the conflict/stale stage.
+
+### `POST /api/dev/trigger-conflict`
+
+Implemented. Arms a one-shot conflict for the next WorkItem PATCH. The next `PATCH /api/work-items/{id}` returns `409 DEV_CONFLICT` with `workItemId`, `clientRevision`, and `serverRevision` details, then the one-shot flag resets. Full conflict resolution UI remains planned for the conflict/stale stage.
 
 ## Error Model
 
@@ -173,6 +206,6 @@ Domain endpoints return the canonical error shape:
 }
 ```
 
-Implemented codes include `WORK_ITEM_NOT_FOUND`, `COMMAND_NOT_FOUND`, `VALIDATION_ERROR`, `DEV_FORCED_FAILURE`, and `INTERNAL_ERROR`.
+Implemented codes include `WORK_ITEM_NOT_FOUND`, `COMMAND_NOT_FOUND`, `VALIDATION_ERROR`, `DEV_FORCED_FAILURE`, `DEV_CONFLICT`, and `INTERNAL_ERROR`.
 
-Planned later codes include `WORK_ITEM_REVISION_CONFLICT`, `COMMAND_FAILED`, and `DEV_SIMULATION_ERROR`.
+Command operations may also report `DEV_FORCED_COMMAND_FAILURE` in their `error` field when the DEV fail-next-command path is armed. Planned later codes include `WORK_ITEM_REVISION_CONFLICT`, `COMMAND_FAILED`, and `DEV_SIMULATION_ERROR`.

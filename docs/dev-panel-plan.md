@@ -1,6 +1,6 @@
-# DEV Panel Plan
+# DEV Panel
 
-The DEV panel is planned for a later stage and is not implemented in the scaffold.
+The DEV panel is implemented in Stage 9. It is a local demo/test tool for backend-controlled edge cases.
 
 ## Goals
 
@@ -15,7 +15,7 @@ The DEV panel is planned for a later stage and is not implemented in the scaffol
 
 DEV endpoints should be separated from domain endpoints, for example under `/api/dev`. DEV controls should be clearly excluded from normal domain behavior.
 
-## Planned Endpoints
+## Implemented Endpoints
 
 - `GET /api/dev/settings`: read current DEV settings.
 - `PUT /api/dev/settings`: replace current DEV settings.
@@ -28,22 +28,41 @@ DEV endpoints should be separated from domain endpoints, for example under `/api
 
 ## Settings Shape
 
-Planned settings:
+Implemented settings:
 
 ```json
 {
-  "latencyMs": 0,
+  "responseDelayMs": 0,
   "failNextRequest": false,
   "failNextCommand": false,
-  "staleResponseArmed": false,
-  "conflictArmed": false
+  "staleResponseMode": false,
+  "conflictMode": false,
+  "lastResetAt": "2026-06-06T00:00:00Z",
+  "lastDevAction": "initial seed"
 }
 ```
 
 ## UI Scope
 
-The DEV panel should expose compact controls for latency, failure toggles, reset, external change, stale response, and conflict. It should not be presented as production functionality.
+The DEV panel is implemented as a right-side MUI drawer. It exposes:
+
+- backend response delay selection: `0`, `500`, `1500`, `3000`, or `5000` ms
+- stale response mode toggle
+- conflict mode toggle
+- fail next request
+- fail next command
+- trigger stale response
+- trigger conflict
+- external change for the selected WorkItem
+- reset backend state
+- current settings summary
+
+It is visually separated from normal WorkItem UI and is not required for normal use.
 
 ## Backend Rules
 
 DEV actions may mutate in-memory state and simulation flags. They must not change the main API contract or require external infrastructure.
+
+## Stage 10 Boundary
+
+Stage 9 provides backend controls and basic normal-flow error display. Full conflict resolution UI, stale polling response protection, compare/merge behavior, and state logs remain part of Stage 10.

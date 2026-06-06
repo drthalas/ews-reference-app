@@ -59,7 +59,7 @@ Status response:
 
 ## DEV Support
 
-`POST /api/dev/fail-next-command` is still planned for a later DEV panel stage. Stage 8 implements the successful delayed command flow only.
+`POST /api/dev/fail-next-command` is implemented in Stage 9. It arms a one-shot command failure: the next async command is accepted, starts as `pending`, and later completes as `failed`. The WorkItem `pendingOperation` is cleared and the WorkItem status is not changed to `done`.
 
 ## Boundaries
 

@@ -17,9 +17,10 @@ EWS Reference App is a local reference app for demonstrating frontend-backend in
 - Stage 6.5 is done: Railway demo-deploy preparation for separate frontend and backend services.
 - Stage 7 is done: optimistic update and rollback.
 - Stage 8 is done: async command flow.
-- Stage 9 is next: DEV panel for edge cases.
+- Stage 9 is done: DEV panel for edge cases.
+- Stage 10 is next: conflict and stale response scenarios.
 
-Stage 8 implements async WorkItem commands. `POST /api/work-items/{id}/commands` returns `202 Accepted` with an `operationId`, the WorkItem exposes `pendingOperation`, `GET /api/commands/{operationId}` returns command status, and delayed in-memory completion updates the WorkItem to `done`. Conflict flows, stale response simulation, and full DEV controls remain out of scope until later stages.
+Stage 9 adds a separate frontend DEV panel and unified backend `/api/dev` controls. The panel can manage response delay, fail-next request, fail-next command, external change, stale response trigger, conflict trigger, and reset. Full conflict resolution UI and stale response protection remain out of scope until Stage 10.
 
 ## Repository Shape
 
@@ -61,14 +62,11 @@ Implemented main endpoints:
 
 Implemented DEV endpoints:
 
-- `POST /api/dev/work-items/{id}/external-change`
-- `POST /api/dev/fail-next-request`
-
-Planned DEV endpoints:
-
 - `GET /api/dev/settings`
 - `PUT /api/dev/settings`
 - `POST /api/dev/reset`
+- `POST /api/dev/work-items/{id}/external-change`
+- `POST /api/dev/fail-next-request`
 - `POST /api/dev/fail-next-command`
 - `POST /api/dev/trigger-stale-response`
 - `POST /api/dev/trigger-conflict`

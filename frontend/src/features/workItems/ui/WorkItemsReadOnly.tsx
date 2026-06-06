@@ -28,13 +28,12 @@ import {
 } from '@mui/material';
 import { skipToken } from '@reduxjs/toolkit/query';
 import { useEffect, useMemo, useState } from 'react';
+import { DevPanel } from '../../devPanel/ui/DevPanel';
 import {
   useGetCommandQuery,
   useGetWorkItemQuery,
   useGetWorkItemsQuery,
   useSubmitWorkItemCommandMutation,
-  useTriggerExternalChangeMutation,
-  useTriggerFailNextRequestMutation,
   useUpdateWorkItemOptimisticMutation,
   useUpdateWorkItemMutation,
 } from '../api/workItemsApi';
@@ -221,8 +220,8 @@ export function WorkItemsReadOnly() {
   return (
     <Stack spacing={2}>
       <Alert severity="info" icon={<InfoOutlinedIcon />}>
-        Этап 8: async command flow принимает команду сразу, показывает pending state,
-        а финальное состояние приходит через polling.
+        Этап 9: DEV panel собирает backend-controlled edge cases в отдельный drawer.
+        Normal WorkItem flow остаётся доступен без DEV controls.
       </Alert>
 
       <Paper variant="outlined" sx={{ p: 2 }}>
@@ -263,6 +262,7 @@ export function WorkItemsReadOnly() {
             <Button size="small" startIcon={<RefreshIcon />} onClick={() => refetch()}>
               Refresh
             </Button>
+            <DevPanel selectedWorkItemId={selectedId} onRefreshWorkItems={refetch} />
           </Stack>
         </Stack>
       </Paper>
@@ -302,7 +302,6 @@ export function WorkItemsReadOnly() {
             isLoading={isDetailsLoading}
             isFetching={isDetailsFetching}
             hasError={Boolean(detailsError)}
-            isPollingEnabled={isPollingEnabled}
             onOptimisticPendingChange={setOptimisticPendingId}
           />
         </Grid>
@@ -380,14 +379,12 @@ function WorkItemDetails({
   isLoading,
   isFetching,
   hasError,
-  isPollingEnabled,
   onOptimisticPendingChange,
 }: {
   workItem: WorkItem | null;
   isLoading: boolean;
   isFetching: boolean;
   hasError: boolean;
-  isPollingEnabled: boolean;
   onOptimisticPendingChange: (id: string | null) => void;
 }) {
   const [isEditing, setIsEditing] = useState(false);
@@ -398,10 +395,6 @@ function WorkItemDetails({
   const [updateWorkItem, { isLoading: isSaving }] = useUpdateWorkItemMutation();
   const [updateWorkItemOptimistic, { isLoading: isOptimisticSaving }] =
     useUpdateWorkItemOptimisticMutation();
-  const [triggerExternalChange, { isLoading: isChangingExternally }] =
-    useTriggerExternalChangeMutation();
-  const [triggerFailNextRequest, { isLoading: isArmingFailure }] =
-    useTriggerFailNextRequestMutation();
   const [submitWorkItemCommand, { isLoading: isSubmittingCommand }] =
     useSubmitWorkItemCommandMutation();
   const {
@@ -532,25 +525,6 @@ function WorkItemDetails({
     }
   };
 
-  const armFailNextRequest = async () => {
-    setFormError(null);
-    setSuccessMessage(null);
-
-    try {
-      await triggerFailNextRequest().unwrap();
-      setSuccessMessage(
-        'Следующий PATCH будет завершён ошибкой DEV_FORCED_FAILURE. Нажмите optimistic save, чтобы увидеть rollback.'
-      );
-    } catch (error) {
-      setFormError(
-        getMutationErrorMessage(
-          error,
-          'Не удалось включить fail-next-request. Проверьте backend и повторите попытку.'
-        )
-      );
-    }
-  };
-
   const runAsyncCompleteCommand = async () => {
     setFormError(null);
     setSuccessMessage(null);
@@ -573,27 +547,6 @@ function WorkItemDetails({
   };
 
   const commandStatus = getCommandStatus(workItem, commandOperation, activeOperationId);
-
-  const runExternalChange = async () => {
-    setFormError(null);
-    setSuccessMessage(null);
-
-    try {
-      await triggerExternalChange(workItem.id).unwrap();
-      setSuccessMessage(
-        isPollingEnabled
-          ? 'Внешнее изменение выполнено. Polling подтянет обновлённые данные с backend.'
-          : 'Внешнее изменение выполнено. Включите polling или нажмите Refresh, чтобы подтянуть данные.'
-      );
-    } catch (error) {
-      setFormError(
-        getMutationErrorMessage(
-          error,
-          'Не удалось выполнить внешнее изменение. Проверьте backend и повторите попытку.'
-        )
-      );
-    }
-  };
 
   return (
     <Paper variant="outlined" sx={{ p: 2.5, height: '100%' }}>
@@ -690,24 +643,9 @@ function WorkItemDetails({
                 {isSubmittingCommand ? 'Запуск...' : 'Запустить async complete'}
               </Button>
               <Button
-                variant="outlined"
-                onClick={runExternalChange}
-                disabled={isChangingExternally || isArmingFailure || isSubmittingCommand}
-                startIcon={
-                  isChangingExternally ? <CircularProgress color="inherit" size={16} /> : <SyncIcon />
-                }
+                variant="contained"
+                onClick={startEditing}
               >
-                {isChangingExternally ? 'Изменение...' : 'Имитировать внешнее изменение'}
-              </Button>
-              <Button
-                variant="outlined"
-                onClick={armFailNextRequest}
-                disabled={isChangingExternally || isArmingFailure || isSubmittingCommand}
-                startIcon={isArmingFailure ? <CircularProgress color="inherit" size={16} /> : undefined}
-              >
-                {isArmingFailure ? 'Готовлю ошибку...' : 'Следующее сохранение завершить ошибкой'}
-              </Button>
-              <Button variant="contained" onClick={startEditing}>
                 Редактировать
               </Button>
             </>
@@ -715,8 +653,8 @@ function WorkItemDetails({
         </Stack>
 
         <Alert severity="info">
-          Этап 8 adds async command flow. Backend returns 202 with an operation id, command
-          status is polled separately, and WorkItem polling brings in the final completed state.
+          Этап 9 adds a separate DEV panel for backend-controlled edge cases. Full conflict
+          and stale-response UX remains planned for Этап 10.
         </Alert>
       </Stack>
     </Paper>

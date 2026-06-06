@@ -11,4 +11,6 @@ public interface WorkItemRepository {
     Optional<WorkItem> findById(String id);
 
     WorkItem save(WorkItem workItem);
+
+    void reset();
 }

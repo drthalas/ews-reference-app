@@ -1,6 +1,6 @@
 # Conflict Handling
 
-Conflict handling is planned for a later stage and is not implemented in the scaffold.
+Conflict handling UX is planned for Stage 10. Stage 9 adds backend DEV controls that can trigger conflict and stale response scenarios, but it does not implement full conflict resolution UI.
 
 ## Goals
 
@@ -38,7 +38,13 @@ Conflict error shape:
 
 ## DEV Support
 
-`POST /api/dev/work-items/{id}/external-change` should mutate an item and increment revision to simulate another actor. `POST /api/dev/trigger-conflict` should prepare a deterministic conflict for the next eligible update.
+Implemented DEV support:
+
+- `POST /api/dev/work-items/{id}/external-change` mutates an item and increments revision to simulate another actor.
+- `POST /api/dev/trigger-conflict` prepares a deterministic one-shot `409 DEV_CONFLICT` for the next WorkItem PATCH.
+- `PUT /api/dev/settings` can enable `conflictMode`, where eligible PATCH requests return `409 DEV_CONFLICT`.
+
+Stage 10 should turn these controls into a full conflict handling demo with clear frontend state and retry behavior.
 
 ## Constraints
 
