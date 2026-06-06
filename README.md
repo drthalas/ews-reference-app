@@ -4,7 +4,9 @@ EWS Reference App is a reference application for demonstrating common frontend-b
 
 ## Current Status
 
-Initial scaffold:
+Stage 1 is complete and Stage 2 is current.
+
+Implemented scaffold:
 
 - React, TypeScript, Vite frontend
 - Redux Toolkit and RTK Query setup
@@ -13,6 +15,12 @@ Initial scaffold:
 - OpenAPI and Swagger UI
 - Docker Compose for local frontend and backend services
 - Architecture and roadmap documentation
+
+Current documentation stage:
+
+- compact project context in `docs/context.md`
+- execution map in `docs/tasks.md`
+- refined API, architecture, state, polling, optimistic update, async command, conflict, DEV panel, demo, and roadmap plans
 
 ## Tech Stack
 
@@ -72,4 +80,4 @@ docker compose up
 
 ## Next Development Stage
 
-The next stage is documentation refinement followed by a minimal backend WorkItem API. Full update flows, polling, optimistic update, async commands, DEV panel, conflict scenarios, prefetch, and tests are planned but intentionally not implemented in this scaffold.
+The next implementation stage is a minimal backend WorkItem API. Full update flows, polling, optimistic update, async commands, DEV panel, conflict scenarios, prefetch, and broader tests are planned but intentionally not implemented in the current scaffold.
