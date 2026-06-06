@@ -12,9 +12,10 @@ EWS Reference App is a local reference app for demonstrating frontend-backend in
 - Stage 2 is done: architecture documentation and compact planning context.
 - Stage 3 is done: minimal backend WorkItem API.
 - Stage 4 is done: frontend RTK Query read-only integration.
-- Stage 5 is next: server-confirmed WorkItem update.
+- Stage 5 is done: server-confirmed WorkItem update.
+- Stage 6 is next: polling and external data changes.
 
-Stage 4 implements read-only frontend WorkItem list/detail UI through RTK Query. PATCH UI, polling, optimistic updates, async commands, conflict flows, and DEV controls remain out of scope until later stages.
+Stage 5 implements classic WorkItem editing through PATCH UI. The frontend waits for the backend response before showing saved data. Polling, optimistic updates, async commands, conflict flows, and DEV controls remain out of scope until later stages.
 
 ## Repository Shape
 

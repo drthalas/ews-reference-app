@@ -14,7 +14,7 @@ export function App() {
               EWS Reference App
             </Typography>
             <Typography variant="h6" color="text.secondary" sx={{ maxWidth: 720 }}>
-              Этап 4: read-only frontend integration
+              Этап 5: обычное server-confirmed обновление
             </Typography>
           </Stack>
 

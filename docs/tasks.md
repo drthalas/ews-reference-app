@@ -10,7 +10,8 @@ This file is the compact execution map for future work.
 | 2. Architecture docs refinement | Done | Compact context, task map, API plans, policies, demo scenarios, and roadmap. |
 | 3. Backend WorkItem API | Done | In-memory domain model, list/detail/update endpoints, validation, errors, and tests. |
 | 4. Frontend RTK Query integration | Done | WorkItem models, feature API bindings, generated hooks, list rendering, and read-only detail panel. |
-| 5. Server-confirmed update | Next | PATCH UI, saving state, success/error feedback, and RTK Query cache reconciliation. |
+| 5. Server-confirmed update | Done | PATCH UI, saving state, success/error feedback, and RTK Query cache invalidation. |
+| 6. Polling | Next | Polling controls, interval refresh, external-change support, and visual polling state. |
 
 ## Execution Order
 
@@ -46,6 +47,16 @@ This file is the compact execution map for future work.
 - Added status and priority badges, revision display, updatedAt display, and tags.
 - Integrated WorkItems UI into the main app while keeping backend health status visible.
 - Kept editing, PATCH UI, polling, optimistic updates, async commands, DEV panel, and conflict scenarios out of scope.
+
+## Completed Stage 5 Checklist
+
+- Added `updateWorkItem` RTK Query mutation for `PATCH /api/work-items/{id}`.
+- Added details edit mode with title, status, priority, assignee, and comma-separated tags.
+- Added Save and Cancel actions.
+- Added saving state that disables edit controls and waits for backend confirmation.
+- Added success and error feedback without discarding unsaved user input on errors.
+- Invalidated WorkItem list and selected detail cache entries after successful mutation.
+- Kept optimistic update, polling, async commands, DEV panel, and conflict scenarios out of scope.
 
 ## Future Implementation Guardrails
 

@@ -13,6 +13,22 @@ export type WorkItem = {
   updatedAt: string;
 };
 
+export type UpdateWorkItemRequest = Partial<{
+  title: string;
+  status: WorkItemStatus;
+  priority: WorkItemPriority;
+  assignee: string | null;
+  tags: string[];
+}>;
+
+export type ApiError = {
+  status: number;
+  code: string;
+  message: string;
+  details?: Record<string, unknown>;
+  timestamp: string;
+};
+
 export const workItemStatusLabels: Record<WorkItemStatus, string> = {
   new: 'New',
   in_progress: 'In progress',
@@ -20,9 +36,13 @@ export const workItemStatusLabels: Record<WorkItemStatus, string> = {
   done: 'Done',
 };
 
+export const workItemStatusValues: WorkItemStatus[] = ['new', 'in_progress', 'blocked', 'done'];
+
 export const workItemPriorityLabels: Record<WorkItemPriority, string> = {
   low: 'Low',
   medium: 'Medium',
   high: 'High',
   critical: 'Critical',
 };
+
+export const workItemPriorityValues: WorkItemPriority[] = ['low', 'medium', 'high', 'critical'];

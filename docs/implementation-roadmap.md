@@ -6,8 +6,8 @@
 2. Architecture docs refinement - done.
 3. Backend WorkItem API - done.
 4. Frontend RTK Query integration - done.
-5. Server-confirmed update - next.
-6. Polling - planned.
+5. Server-confirmed update - done.
+6. Polling - next.
 7. Optimistic update - planned.
 8. Async command flow - planned.
 9. DEV panel - planned.
@@ -64,11 +64,17 @@ Completed implementation stage:
 
 ### 5. Server-Confirmed Update
 
-Next stage: add edit controls that wait for server confirmation before finalizing UI state.
+Completed implementation stage:
+
+- added `updateWorkItem` mutation for `PATCH /api/work-items/{id}`
+- added edit controls for title, status, priority, assignee, and tags
+- added saving, success, and error feedback
+- invalidated WorkItem list and detail cache after successful server response
+- kept optimistic update out of scope
 
 ### 6. Polling
 
-Add periodic WorkItem refresh and stale response protection.
+Next stage: add periodic WorkItem refresh and stale response protection.
 
 ### 7. Optimistic Update
 

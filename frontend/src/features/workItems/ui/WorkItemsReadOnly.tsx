@@ -9,24 +9,46 @@ import {
   Chip,
   CircularProgress,
   Divider,
+  FormControl,
   Grid,
+  InputLabel,
+  LinearProgress,
   List,
   ListItemButton,
   ListItemText,
+  MenuItem,
   Paper,
+  Select,
   Stack,
+  TextField,
   Typography,
 } from '@mui/material';
 import { skipToken } from '@reduxjs/toolkit/query';
 import { useEffect, useMemo, useState } from 'react';
-import { useGetWorkItemQuery, useGetWorkItemsQuery } from '../api/workItemsApi';
+import {
+  useGetWorkItemQuery,
+  useGetWorkItemsQuery,
+  useUpdateWorkItemMutation,
+} from '../api/workItemsApi';
 import {
   workItemPriorityLabels,
+  workItemPriorityValues,
   workItemStatusLabels,
+  workItemStatusValues,
+  type ApiError,
+  type UpdateWorkItemRequest,
   type WorkItem,
   type WorkItemPriority,
   type WorkItemStatus,
 } from '../model/workItem';
+
+type WorkItemDraft = {
+  title: string;
+  status: WorkItemStatus;
+  priority: WorkItemPriority;
+  assignee: string;
+  tags: string;
+};
 
 const statusColor: Record<WorkItemStatus, 'default' | 'info' | 'success' | 'warning'> = {
   new: 'default',
@@ -47,6 +69,34 @@ function formatDate(value: string) {
     dateStyle: 'medium',
     timeStyle: 'short',
   }).format(new Date(value));
+}
+
+function toDraft(workItem: WorkItem): WorkItemDraft {
+  return {
+    title: workItem.title,
+    status: workItem.status,
+    priority: workItem.priority,
+    assignee: workItem.assignee ?? '',
+    tags: workItem.tags.join(', '),
+  };
+}
+
+function parseTags(value: string) {
+  return value
+    .split(',')
+    .map((tag) => tag.trim())
+    .filter(Boolean);
+}
+
+function getMutationErrorMessage(error: unknown) {
+  if (typeof error === 'object' && error && 'data' in error) {
+    const data = (error as { data?: ApiError }).data;
+    if (data?.message || data?.code) {
+      return [data.code, data.message].filter(Boolean).join(': ');
+    }
+  }
+
+  return 'Не удалось сохранить изменения. Проверьте данные и повторите попытку.';
 }
 
 export function WorkItemsReadOnly() {
@@ -123,7 +173,8 @@ export function WorkItemsReadOnly() {
   return (
     <Stack spacing={2}>
       <Alert severity="info" icon={<InfoOutlinedIcon />}>
-        Этап 4: read-only frontend integration. Editing will be added in the next stage.
+        Этап 5: обычное server-confirmed обновление. Changes are applied only after
+        the backend responds; optimistic update will be added later.
       </Alert>
 
       <Grid container spacing={2.5} alignItems="stretch">
@@ -236,6 +287,18 @@ function WorkItemDetails({
   isFetching: boolean;
   hasError: boolean;
 }) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [draft, setDraft] = useState<WorkItemDraft | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [updateWorkItem, { isLoading: isSaving }] = useUpdateWorkItemMutation();
+
+  useEffect(() => {
+    if (workItem && !isEditing) {
+      setDraft(toDraft(workItem));
+    }
+  }, [isEditing, workItem]);
+
   if (isLoading) {
     return (
       <Paper variant="outlined" sx={{ p: 3, height: '100%' }}>
@@ -263,9 +326,60 @@ function WorkItemDetails({
     );
   }
 
+  const activeDraft = draft ?? toDraft(workItem);
+  const titleError = !activeDraft.title.trim();
+
+  const startEditing = () => {
+    setDraft(toDraft(workItem));
+    setFormError(null);
+    setSuccessMessage(null);
+    setIsEditing(true);
+  };
+
+  const cancelEditing = () => {
+    setDraft(toDraft(workItem));
+    setFormError(null);
+    setIsEditing(false);
+  };
+
+  const updateDraft = <Key extends keyof WorkItemDraft>(key: Key, value: WorkItemDraft[Key]) => {
+    setDraft((current) => ({ ...(current ?? toDraft(workItem)), [key]: value }));
+    setFormError(null);
+  };
+
+  const saveDraft = async () => {
+    const trimmedTitle = activeDraft.title.trim();
+    if (!trimmedTitle) {
+      setFormError('Title не должен быть пустым.');
+      return;
+    }
+
+    const changes: UpdateWorkItemRequest = {
+      title: trimmedTitle,
+      status: activeDraft.status,
+      priority: activeDraft.priority,
+      assignee: activeDraft.assignee.trim() || null,
+      tags: parseTags(activeDraft.tags),
+    };
+
+    try {
+      const saved = await updateWorkItem({ id: workItem.id, changes }).unwrap();
+      setDraft(toDraft(saved));
+      setFormError(null);
+      setSuccessMessage('Изменения сохранены');
+      setIsEditing(false);
+    } catch (error) {
+      setFormError(getMutationErrorMessage(error));
+    }
+  };
+
   return (
     <Paper variant="outlined" sx={{ p: 2.5, height: '100%' }}>
       <Stack spacing={2}>
+        {isSaving ? <LinearProgress /> : null}
+        {successMessage ? <Alert severity="success">{successMessage}</Alert> : null}
+        {formError ? <Alert severity="error">{formError}</Alert> : null}
+
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} justifyContent="space-between">
           <Stack spacing={0.5}>
             <Typography variant="h5" sx={{ fontWeight: 700 }}>
@@ -291,31 +405,150 @@ function WorkItemDetails({
 
         <Divider />
 
-        <Grid container spacing={2}>
-          <DetailItem label="Assignee" value={workItem.assignee ?? 'Unassigned'} />
-          <DetailItem label="Revision" value={`rev ${workItem.revision}`} />
-          <DetailItem label="Updated" value={formatDate(workItem.updatedAt)} />
-        </Grid>
+        {isEditing ? (
+          <WorkItemEditForm
+            draft={activeDraft}
+            disabled={isSaving}
+            titleError={titleError}
+            onChange={updateDraft}
+          />
+        ) : (
+          <WorkItemReadDetails workItem={workItem} />
+        )}
 
-        <Stack spacing={1}>
-          <Typography variant="subtitle2">Tags</Typography>
-          <Stack direction="row" spacing={1} flexWrap="wrap">
-            {workItem.tags.length ? (
-              workItem.tags.map((tag) => <Chip key={tag} size="small" label={tag} />)
-            ) : (
-              <Typography variant="body2" color="text.secondary">
-                No tags
-              </Typography>
-            )}
-          </Stack>
+        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} justifyContent="flex-end">
+          {isEditing ? (
+            <>
+              <Button variant="outlined" onClick={cancelEditing} disabled={isSaving}>
+                Отмена
+              </Button>
+              <Button
+                variant="contained"
+                onClick={saveDraft}
+                disabled={isSaving || titleError}
+                startIcon={isSaving ? <CircularProgress color="inherit" size={16} /> : undefined}
+              >
+                {isSaving ? 'Сохранение...' : 'Сохранить'}
+              </Button>
+            </>
+          ) : (
+            <Button variant="contained" onClick={startEditing}>
+              Редактировать
+            </Button>
+          )}
         </Stack>
 
         <Alert severity="info">
-          This panel is read-only. Editing controls and server-confirmed updates are planned for
-          Этап 5.
+          Этап 5 uses server-confirmed updates. The UI waits for the backend response before
+          showing saved data; optimistic update is planned later.
         </Alert>
       </Stack>
     </Paper>
+  );
+}
+
+function WorkItemReadDetails({ workItem }: { workItem: WorkItem }) {
+  return (
+    <Stack spacing={2}>
+      <Grid container spacing={2}>
+        <DetailItem label="Assignee" value={workItem.assignee ?? 'Unassigned'} />
+        <DetailItem label="Revision" value={`rev ${workItem.revision}`} />
+        <DetailItem label="Updated" value={formatDate(workItem.updatedAt)} />
+      </Grid>
+
+      <Stack spacing={1}>
+        <Typography variant="subtitle2">Tags</Typography>
+        <Stack direction="row" spacing={1} flexWrap="wrap">
+          {workItem.tags.length ? (
+            workItem.tags.map((tag) => <Chip key={tag} size="small" label={tag} />)
+          ) : (
+            <Typography variant="body2" color="text.secondary">
+              No tags
+            </Typography>
+          )}
+        </Stack>
+      </Stack>
+    </Stack>
+  );
+}
+
+function WorkItemEditForm({
+  draft,
+  disabled,
+  titleError,
+  onChange,
+}: {
+  draft: WorkItemDraft;
+  disabled: boolean;
+  titleError: boolean;
+  onChange: <Key extends keyof WorkItemDraft>(key: Key, value: WorkItemDraft[Key]) => void;
+}) {
+  return (
+    <Stack spacing={2}>
+      <TextField
+        label="Title"
+        value={draft.title}
+        onChange={(event) => onChange('title', event.target.value)}
+        error={titleError}
+        helperText={titleError ? 'Title не должен быть пустым.' : ' '}
+        disabled={disabled}
+        fullWidth
+      />
+
+      <Grid container spacing={2}>
+        <Grid item xs={12} sm={6}>
+          <FormControl fullWidth disabled={disabled}>
+            <InputLabel id="work-item-status-label">Status</InputLabel>
+            <Select
+              labelId="work-item-status-label"
+              label="Status"
+              value={draft.status}
+              onChange={(event) => onChange('status', event.target.value as WorkItemStatus)}
+            >
+              {workItemStatusValues.map((status) => (
+                <MenuItem key={status} value={status}>
+                  {workItemStatusLabels[status]}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Grid>
+        <Grid item xs={12} sm={6}>
+          <FormControl fullWidth disabled={disabled}>
+            <InputLabel id="work-item-priority-label">Priority</InputLabel>
+            <Select
+              labelId="work-item-priority-label"
+              label="Priority"
+              value={draft.priority}
+              onChange={(event) => onChange('priority', event.target.value as WorkItemPriority)}
+            >
+              {workItemPriorityValues.map((priority) => (
+                <MenuItem key={priority} value={priority}>
+                  {workItemPriorityLabels[priority]}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Grid>
+      </Grid>
+
+      <TextField
+        label="Assignee"
+        value={draft.assignee}
+        onChange={(event) => onChange('assignee', event.target.value)}
+        disabled={disabled}
+        fullWidth
+      />
+
+      <TextField
+        label="Tags"
+        value={draft.tags}
+        onChange={(event) => onChange('tags', event.target.value)}
+        helperText="Comma-separated values, for example: frontend, api, demo"
+        disabled={disabled}
+        fullWidth
+      />
+    </Stack>
   );
 }
 

@@ -17,6 +17,7 @@ Implemented scaffold:
 - Architecture and roadmap documentation
 - Backend WorkItem list/detail/patch API with deterministic in-memory data
 - Read-only frontend WorkItem list/detail integration through RTK Query
+- Server-confirmed frontend WorkItem edit flow with RTK Query cache invalidation
 
 Current documentation stage:
 
@@ -83,4 +84,4 @@ docker compose up
 
 ## Next Development Stage
 
-The next implementation stage is server-confirmed WorkItem updates from the frontend. Polling, optimistic update, async commands, DEV panel, conflict scenarios, prefetch, and broader tests are planned but intentionally not implemented in the current scaffold.
+The next implementation stage is polling and external data changes. Optimistic update, async commands, DEV panel, conflict scenarios, prefetch, and broader tests are planned but intentionally not implemented in the current scaffold.
