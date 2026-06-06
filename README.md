@@ -15,6 +15,7 @@ Implemented scaffold:
 - OpenAPI and Swagger UI
 - Docker Compose for local frontend and backend services
 - Architecture and roadmap documentation
+- Backend WorkItem list/detail/patch API with deterministic in-memory data
 
 Current documentation stage:
 
@@ -76,8 +77,9 @@ docker compose up
 
 - Frontend: http://localhost:5173
 - Backend health: http://localhost:8080/api/health
+- Backend WorkItems: http://localhost:8080/api/work-items
 - Swagger: http://localhost:8080/swagger-ui.html
 
 ## Next Development Stage
 
-The next implementation stage is a minimal backend WorkItem API. Full update flows, polling, optimistic update, async commands, DEV panel, conflict scenarios, prefetch, and broader tests are planned but intentionally not implemented in the current scaffold.
+The next implementation stage is frontend RTK Query integration for WorkItem data. Polling, optimistic update, async commands, DEV panel, conflict scenarios, prefetch, and broader tests are planned but intentionally not implemented in the current scaffold.

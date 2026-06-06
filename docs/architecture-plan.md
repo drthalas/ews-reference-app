@@ -4,9 +4,9 @@ EWS Reference App demonstrates frontend-backend interaction patterns in an EWS-l
 
 ## Stage Position
 
-Stage 1 is complete and provides the scaffold. Stage 2 is documentation and planning. Stage 3 will add the first runtime WorkItem API.
+Stage 1 is complete and provides the scaffold. Stage 2 is complete and provides documentation and planning context. Stage 3 is complete and provides the first runtime WorkItem API. Stage 4 will add frontend RTK Query integration.
 
-Stage 2 must not implement domain endpoints, polling, optimistic updates, async commands, DEV controls, conflict simulation, or prefetch behavior.
+Stage 3 implements only backend WorkItem list, detail, and patch endpoints. Polling, optimistic updates, async commands, DEV controls, conflict simulation, prefetch behavior, and frontend WorkItem UI remain planned for later stages.
 
 ## Monorepo Layout
 
@@ -24,7 +24,7 @@ The frontend communicates with the backend only through feature API modules buil
 
 ## Domain Boundary
 
-`WorkItem` is the future domain object. It represents a small unit of work with status, priority, revision, and timestamps. Status values are `new`, `in_progress`, `blocked`, and `done`. Priority values are `low`, `medium`, `high`, and `critical`.
+`WorkItem` is the domain object. It represents a small unit of work with title, status, priority, optional assignee, tags, revision, and timestamps. Status values are `new`, `in_progress`, `blocked`, and `done`. Priority values are `low`, `medium`, `high`, and `critical`.
 
 Backend revisions are the source of truth for freshness. Every server-confirmed WorkItem change increments the item revision. The frontend may display pending local intent, but it must reconcile against server-confirmed data.
 
@@ -36,15 +36,15 @@ Redux slices are reserved for UI state: selected rows, panel visibility, filters
 
 ## Backend Model
 
-Spring Boot provides REST endpoints, health checks, shared API error types, and OpenAPI documentation. The future domain API should live under a backend `workitem` package, with separate controller, service, repository, DTO, and validation responsibilities.
+Spring Boot provides REST endpoints, health checks, shared API error types, and OpenAPI documentation. The domain API lives under a backend `workitem` package, with separate controller, service, repository, DTO, and validation responsibilities.
 
 Storage will remain in memory to keep the app reproducible and focused on reference flows. No database, external queue, external worker, or multi-process dependency is planned.
 
 ## API Boundary
 
-Main API endpoints are planned under `/api/work-items` and `/api/commands`. DEV endpoints are planned under `/api/dev` and must stay separated from normal domain behavior.
+Implemented main API endpoints live under `/api/work-items`. Future command endpoints are planned under `/api/commands`. DEV endpoints are planned under `/api/dev` and must stay separated from normal domain behavior.
 
-The canonical error model for future domain endpoints is `ApiError(status, code, message, details, timestamp)`. The existing scaffold-level API error record can be expanded when domain errors are introduced.
+The canonical error model for domain endpoints is `ApiError(status, code, message, details, timestamp)`.
 
 ## OpenAPI
 

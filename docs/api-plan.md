@@ -1,6 +1,6 @@
 # API Plan
 
-The current implemented API surface contains only `GET /api/health`.
+The implemented API surface contains `GET /api/health` and the first backend WorkItem API.
 
 ```json
 {
@@ -9,20 +9,18 @@ The current implemented API surface contains only `GET /api/health`.
 }
 ```
 
-All endpoints below are planned contracts for later stages. They are not implemented in Stage 2.
-
 ## WorkItem Contract
 
-Planned response shape:
+Implemented response shape:
 
 ```json
 {
   "id": "wi-1",
   "title": "Review intake",
-  "description": "Confirm required details before processing.",
   "status": "new",
   "priority": "medium",
   "assignee": "Alex",
+  "tags": ["intake", "backend"],
   "revision": 1,
   "updatedAt": "2026-06-06T00:00:00Z"
 }
@@ -46,32 +44,35 @@ Priority values:
 
 ### `GET /api/work-items`
 
-Returns the current in-memory list of WorkItem records. The first version should support deterministic demo data and no pagination.
+Implemented. Returns the current deterministic in-memory list of WorkItem records. The first version has no pagination.
 
 ### `GET /api/work-items/{id}`
 
-Returns a single WorkItem. This supports detail refresh and future prefetch scenarios.
+Implemented. Returns a single WorkItem. Unknown ids return `404` with `WORK_ITEM_NOT_FOUND`.
 
 ### `PATCH /api/work-items/{id}`
 
-Applies a server-confirmed partial update. Planned request fields:
+Implemented. Applies a server-confirmed partial update. Request fields:
 
 ```json
 {
   "title": "Review intake",
-  "description": "Updated detail",
   "status": "in_progress",
   "priority": "high",
   "assignee": "Alex",
-  "expectedRevision": 1
+  "tags": ["backend", "validation"]
 }
 ```
 
-The backend validates enum values, requires a matching `expectedRevision` when conflict handling is enabled, increments `revision`, updates `updatedAt`, and returns the server-confirmed WorkItem.
+Allowed fields are `title`, `status`, `priority`, `assignee`, and `tags`.
+
+The backend validates enum values, requires non-empty title when `title` is provided, rejects non-array or null-containing `tags`, increments `revision` only when data actually changes, updates `updatedAt` only when data actually changes, and returns the server-confirmed WorkItem.
+
+Empty or no-op PATCH payloads return the current WorkItem without incrementing `revision` and without changing `updatedAt`.
 
 ### `POST /api/work-items/{id}/commands`
 
-Submits an async command for a WorkItem and returns an operation identifier.
+Planned for a later stage. Submits an async command for a WorkItem and returns an operation identifier.
 
 Planned request:
 
@@ -94,7 +95,7 @@ Planned response:
 
 ### `GET /api/commands/{operationId}`
 
-Returns command status.
+Planned for a later stage. Returns command status.
 
 ```json
 {
@@ -123,7 +124,7 @@ DEV endpoints are planned under `/api/dev` and are only for local scenario simul
 
 ## Error Model
 
-Future domain and DEV endpoints should return the canonical error shape:
+Domain endpoints return the canonical error shape:
 
 ```json
 {
@@ -139,4 +140,6 @@ Future domain and DEV endpoints should return the canonical error shape:
 }
 ```
 
-Planned codes include `WORK_ITEM_NOT_FOUND`, `WORK_ITEM_INVALID_STATUS`, `WORK_ITEM_INVALID_PRIORITY`, `WORK_ITEM_REVISION_CONFLICT`, `COMMAND_NOT_FOUND`, `COMMAND_FAILED`, and `DEV_SIMULATION_ERROR`.
+Implemented codes include `WORK_ITEM_NOT_FOUND`, `VALIDATION_ERROR`, and `INTERNAL_ERROR`.
+
+Planned later codes include `WORK_ITEM_REVISION_CONFLICT`, `COMMAND_NOT_FOUND`, `COMMAND_FAILED`, and `DEV_SIMULATION_ERROR`.

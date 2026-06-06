@@ -7,8 +7,9 @@ This file is the compact execution map for future work.
 | Stage | Status | Scope |
 | --- | --- | --- |
 | 1. Initial scaffold | Done | React/Vite frontend, Spring Boot backend, health check, Docker Compose, initial docs. |
-| 2. Architecture docs refinement | Current | Compact context, task map, API plans, policies, demo scenarios, and roadmap. |
-| 3. Backend WorkItem API | Next | In-memory domain model, list/detail/update endpoints, validation, errors, and tests. |
+| 2. Architecture docs refinement | Done | Compact context, task map, API plans, policies, demo scenarios, and roadmap. |
+| 3. Backend WorkItem API | Done | In-memory domain model, list/detail/update endpoints, validation, errors, and tests. |
+| 4. Frontend RTK Query integration | Next | WorkItem models, feature API bindings, generated hooks, and basic list rendering. |
 
 ## Execution Order
 
@@ -26,14 +27,15 @@ This file is the compact execution map for future work.
 12. Add prefetch scenario.
 13. Add final demo documentation and broader tests.
 
-## Current Stage 2 Checklist
+## Completed Stage 3 Checklist
 
-- Add compact project context in `docs/context.md`.
-- Add task map in `docs/tasks.md`.
-- Refine architecture, API, backend, frontend, state, polling, optimistic, async, conflict, DEV, demo, and roadmap docs.
-- Keep the application scaffold unchanged.
-- Verify no forbidden legacy names appear.
-- Verify existing frontend build and backend tests still pass.
+- Added backend WorkItem packages under `workitem/api`, `workitem/domain`, `workitem/service`, and `workitem/storage`.
+- Added deterministic in-memory seed data.
+- Added `GET /api/work-items`.
+- Added `GET /api/work-items/{id}`.
+- Added `PATCH /api/work-items/{id}`.
+- Added validation, revision increment on actual change, updated timestamps, and consistent `ApiError`.
+- Added backend MockMvc coverage for list, detail, patch, revision, not found, and validation behavior.
 
 ## Future Implementation Guardrails
 

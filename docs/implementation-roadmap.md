@@ -3,9 +3,9 @@
 ## Stage Status
 
 1. Initial scaffold - done.
-2. Architecture docs refinement - current.
-3. Backend WorkItem API - next.
-4. Frontend RTK Query integration - planned.
+2. Architecture docs refinement - done.
+3. Backend WorkItem API - done.
+4. Frontend RTK Query integration - next.
 5. Server-confirmed update - planned.
 6. Polling - planned.
 7. Optimistic update - planned.
@@ -41,7 +41,7 @@ No runtime behavior should be added in this stage.
 
 ### 3. Backend WorkItem API
 
-Next implementation stage:
+Completed implementation stage:
 
 - add WorkItem domain model with statuses `new`, `in_progress`, `blocked`, `done`
 - add priorities `low`, `medium`, `high`, `critical`
@@ -54,7 +54,7 @@ Next implementation stage:
 
 ### 4. Frontend RTK Query Integration
 
-Add typed WorkItem models, API endpoints, generated hooks, and basic list rendering.
+Next stage: add typed WorkItem models, API endpoints, generated hooks, and basic list rendering.
 
 ### 5. Server-Confirmed Update
 

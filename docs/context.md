@@ -9,10 +9,11 @@ EWS Reference App is a local reference app for demonstrating frontend-backend in
 ## Current Stage
 
 - Stage 1 is done: initial scaffold.
-- Stage 2 is current: architecture documentation and compact planning context.
-- Stage 3 is next: minimal backend WorkItem API.
+- Stage 2 is done: architecture documentation and compact planning context.
+- Stage 3 is done: minimal backend WorkItem API.
+- Stage 4 is next: frontend RTK Query integration.
 
-Stage 2 is documentation and planning only. Do not implement WorkItem endpoints, polling, optimistic updates, async commands, conflict flows, or DEV controls in this stage.
+Stage 3 implements only the backend WorkItem list/detail/patch API. Polling, optimistic updates, async commands, conflict flows, DEV controls, and frontend WorkItem UI remain out of scope until later stages.
 
 ## Repository Shape
 
@@ -28,24 +29,27 @@ Stage 2 is documentation and planning only. Do not implement WorkItem endpoints,
 - Swagger UI: `http://localhost:8080/swagger-ui.html`
 - Frontend API base: `VITE_API_BASE_URL`, defaulting to `http://localhost:8080`
 
-## Domain Contract To Build Later
+## Domain Contract
 
-`WorkItem` is the future domain object. Planned fields:
+`WorkItem` is the backend domain object. Implemented fields:
 
 - `id`: stable string identifier.
 - `title`: short display name.
-- `description`: optional detail text.
 - `status`: one of `new`, `in_progress`, `blocked`, `done`.
 - `priority`: one of `low`, `medium`, `high`, `critical`.
 - `assignee`: optional display value.
+- `tags`: ordered list of string labels.
 - `revision`: monotonically increasing server revision.
 - `updatedAt`: server timestamp.
 
-Planned main endpoints:
+Implemented main endpoints:
 
 - `GET /api/work-items`
 - `GET /api/work-items/{id}`
 - `PATCH /api/work-items/{id}`
+
+Planned later endpoints:
+
 - `POST /api/work-items/{id}/commands`
 - `GET /api/commands/{operationId}`
 
@@ -60,7 +64,7 @@ Planned DEV endpoints:
 - `POST /api/dev/trigger-stale-response`
 - `POST /api/dev/trigger-conflict`
 
-Planned error model: `ApiError(status, code, message, details, timestamp)`.
+Implemented error model: `ApiError(status, code, message, details, timestamp)`.
 
 ## Design Rules
 
