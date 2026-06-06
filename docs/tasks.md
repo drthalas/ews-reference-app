@@ -19,7 +19,7 @@ This file is the compact execution map for future work.
 | 10. Conflict and stale scenarios | Done | Deterministic conflict handling, reload/cancel conflict UI, and stale response protection. |
 | 11. Prefetch and UX polish | Done | Detail prefetch, improved state badges/logs, responsive polish, and UX refinements. |
 | 12. Expanded testing | Done | Broader backend MockMvc coverage plus frontend Vitest/RTL/MSW coverage. |
-| 13. Final demo documentation | Next | Final runbook, API examples, demo script, and known limitations. |
+| 13. Final demo documentation | Done | Final README, runbook, API examples, demo script, scenarios, and known limitations. |
 
 ## Execution Order
 
@@ -167,6 +167,14 @@ This file is the compact execution map for future work.
 - Added backend coverage for invalid WorkItem status and priority validation.
 - Added backend coverage for rejecting a second async command while a WorkItem already has a pending operation.
 - Kept new product features, new backend scenarios, new DEV triggers, and Playwright/e2e suite out of scope.
+
+## Completed Stage 13 Checklist
+
+- Finalized README with local run, Docker Compose, Railway deploy, API examples, demo runbook pointer, and known limitations.
+- Added `docs/runbook.md` with smoke checks, API examples, demo script, reset steps, local run instructions, Railway deploy summary, and troubleshooting.
+- Finalized `docs/demo-scenarios.md` with concrete demonstration steps for classic update, polling, optimistic rollback, async command, DEV panel, conflict, and stale response.
+- Documented in-memory reset behavior and non-goals: auth, external DB, Redis, WebSocket, external queue, real multi-user collaboration, and production admin/security model.
+- Kept runtime implementation unchanged.
 
 ## Future Implementation Guardrails
 

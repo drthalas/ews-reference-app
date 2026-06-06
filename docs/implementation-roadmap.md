@@ -15,7 +15,7 @@
 10. Conflict and stale scenarios - done.
 11. Prefetch - done.
 12. Tests - done.
-13. Final demo documentation - next.
+13. Final demo documentation - done.
 
 ## Stage Details
 
@@ -168,4 +168,10 @@ Completed testing stage:
 
 ### 13. Final Demo Documentation
 
-Next stage: document the complete demo flow, expected outcomes, local run instructions, API examples, runbook, known limitations, and demo script.
+Completed documentation stage:
+
+- finalized README with local run, Docker Compose, Railway deploy summary, API examples, runbook pointer, and known limitations
+- added `docs/runbook.md` as the primary demo script and operator guide
+- finalized `docs/demo-scenarios.md` with expected API calls, UI behavior, recovery steps, and reset steps
+- documented classic update, polling, optimistic rollback, async command, DEV panel, conflict, and stale response scenarios
+- kept runtime implementation unchanged

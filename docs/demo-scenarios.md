@@ -1,71 +1,72 @@
 # Demo Scenarios
 
-This project now implements and tests the core WorkItem demo scenarios through Stage 12. This file remains a compact scenario checklist; the final runbook is planned for Stage 13.
+This is the finalized compact scenario checklist for EWS Reference App. Use `docs/runbook.md` for the full operator script, commands, local run instructions, Railway deploy notes, and troubleshooting.
 
-Future scenarios should document expected UI state, API calls, and recovery behavior. The planned order below matches the roadmap.
+Before every demo session, reset backend state from the DEV panel or through:
 
-## 1. Initial WorkItem List Load
+```bash
+curl -X POST http://localhost:8080/api/dev/reset
+```
 
-- API: `GET /api/work-items`
-- UI: loading state, then compact list with status, priority, assignee, revision, and updated timestamp.
-- Recovery: show backend error state if the request fails.
+## 1. Initial WorkItem Load
 
-## 2. Server-Confirmed Update
+- API: `GET /api/work-items`, optionally `GET /api/work-items/{id}` after selection or prefetch.
+- UI: WorkItems list appears with status, priority, assignee, revision, pending operation, and updated timestamp.
+- Expected result: first seeded item is `wi-1 / Review intake`, revision `1`.
+- Recovery: if the list fails, verify `GET /api/health`, reset backend state, and retry.
 
-- API: `PATCH /api/work-items/{id}`
-- UI: field update waits for server response or shows narrow pending state.
-- Recovery: validation errors stay attached to the edited item or field.
+## 2. Classic Server-Confirmed Update
 
-## 3. Polling Refresh
+- API: `PATCH /api/work-items/{id}`.
+- UI path: select a WorkItem, click `Редактировать`, change title/status/priority/assignee/tags, click `Сохранить`.
+- Expected result: controls are disabled while saving; UI updates only after backend response; revision increments on actual change; success feedback appears.
+- Recovery: validation errors keep edit mode open and preserve the draft.
 
-- API: repeated `GET /api/work-items`
-- UI: background refresh indicator without blocking row interaction.
-- Recovery: failed refresh leaves current data visible and shows a refresh error.
+## 3. Polling And External Change
 
-## 4. Optimistic Update Success
+- API: repeated `GET /api/work-items`; demo action calls `POST /api/dev/work-items/{id}/external-change`.
+- UI path: keep polling enabled, open DEV panel, trigger external change for selected WorkItem.
+- Expected result: polling refresh brings in the changed status/tag/revision without manual page reload.
+- Recovery: if polling is off, enable it or click `Обновить`.
 
-- API: `PATCH /api/work-items/{id}` with `expectedRevision`
-- UI: status or priority changes immediately, then reconciles to server-confirmed revision.
-- Recovery: none when successful.
+## 4. Optimistic Rollback
 
-## 5. Optimistic Update Rollback
+- API: `POST /api/dev/fail-next-request`, then optimistic `PATCH /api/work-items/{id}`.
+- UI path: open DEV panel, click `Fail next request`, edit selected WorkItem, click `Сохранить optimistic`.
+- Expected result: UI applies the optimistic draft immediately, backend returns `DEV_FORCED_FAILURE`, cache rolls back, and an error explains the rollback.
+- Recovery: repeat save without arming `Fail next request`; the next PATCH should behave normally.
 
-- API: `POST /api/dev/fail-next-request`, then `PATCH /api/work-items/{id}`
-- UI: optimistic value appears, then rolls back on failure.
-- Recovery: row-level error explains the failed update.
+## 5. Async Command
 
-## 6. Async Command Pending And Completion
+- API: `POST /api/work-items/{id}/commands`, then `GET /api/commands/{operationId}`.
+- UI path: select a WorkItem and click `Запустить async complete`.
+- Expected result: backend returns `202 Accepted`, WorkItem shows `pendingOperation`, command status polling starts, delayed completion sets status to `done`, clears `pendingOperation`, and increments revision.
+- Recovery: use DEV panel `Fail next command` before command submission to demonstrate command failure without corrupting WorkItem state.
 
-- API: `POST /api/work-items/{id}/commands`, then `GET /api/commands/{operationId}`
-- UI: command pending indicator, then completed state and refreshed WorkItem.
-- Recovery: failed command shows command-specific error without corrupting WorkItem cache.
+## 6. DEV Panel
 
-## 7. Backend Error Display
+- API: `GET /api/dev/settings`, `PUT /api/dev/settings`, `POST /api/dev/reset`, and one-shot DEV actions.
+- UI path: open `DEV panel`.
+- Expected result: settings are shown, selected WorkItem id is visible, selected-item actions are disabled when nothing is selected, and every DEV action gives success/error feedback.
+- Recovery: `Reset backend state` restores deterministic seed WorkItems, clears pending commands, clears DEV flags, and clears frontend RTK Query cache.
 
-- API: `POST /api/dev/fail-next-request`, then any normal request.
-- UI: current data remains visible when possible; error is scoped to the affected action.
-- Recovery: retry returns to normal behavior.
+## 7. Conflict Handling
 
-## 8. Conflict Detection
+- API: `POST /api/dev/trigger-conflict`, then `PATCH /api/work-items/{id}`.
+- UI path: open DEV panel, click `Trigger conflict`, edit selected WorkItem, save with classic or optimistic save.
+- Expected result: next PATCH returns `409 DEV_CONFLICT`; UI shows `Конфликт версий`, client/server revision chips, and actions `Обновить с backend` and `Отменить редактирование`.
+- Recovery: click `Обновить с backend` to refetch and exit edit mode, or `Отменить редактирование` to discard the draft.
 
-- API: `POST /api/dev/work-items/{id}/external-change`, then `PATCH /api/work-items/{id}` with old `expectedRevision`
-- UI: conflict message, rollback of local change, and refreshed server state.
-- Recovery: user retries against the new revision.
+## 8. Stale Response Handling
 
-## 9. Stale Response Handling
+- API: `POST /api/dev/trigger-stale-response`, then next `GET /api/work-items` or `GET /api/work-items/{id}`.
+- UI path: first create a newer revision through edit or external change, then trigger stale response from DEV panel.
+- Expected result: frontend compares revisions, ignores the older incoming WorkItem, keeps the freshest cache entry, and records `Stale response ignored` in state log/details.
+- Recovery: next normal polling/read confirms current state.
 
-- API: `POST /api/dev/trigger-stale-response`, then `GET /api/work-items`
-- UI: stale response ignored, newest known revision remains visible.
-- Recovery: next normal refresh confirms current data.
+## 9. Prefetch And UX State Review
 
-## 10. Data Prefetch Before Navigation
-
-- API: `GET /api/work-items/{id}`
-- UI: focusing or hovering a WorkItem row prefetches details so the selected details panel can reuse warmed cache when available.
-- Recovery: if prefetch fails, detail view performs its own fetch and shows an error if needed.
-
-## 11. UX State Review
-
-- API: existing WorkItem, command, and DEV endpoints.
-- UI: compact state log, polling badges, revision badges, operation metadata, conflict state, stale ignored state, and DEV panel feedback remain visible without blocking normal row interaction.
-- Recovery: clear local log, retry backend refresh, or reset backend state through DEV panel.
+- API: `GET /api/work-items/{id}`.
+- UI path: hover or focus a WorkItem row before selecting it.
+- Expected result: details are prefetched through RTK Query; selecting the item can reuse warmed detail cache. Loading, refetch, operation, stale, conflict, and polling states remain compact and visible.
+- Recovery: if prefetch fails, selecting the item performs the normal detail request and shows the standard details error state if needed.

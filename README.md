@@ -4,7 +4,7 @@ EWS Reference App is a reference application for demonstrating common frontend-b
 
 ## Current Status
 
-Stages 1 through 12 are complete. Stage 13 is next.
+Stages 1 through 13 are complete. The app is ready as a local reference/demo stand.
 
 Implemented:
 
@@ -28,12 +28,15 @@ Implemented:
 - WorkItem detail prefetch on row hover/focus
 - UX polish for loading, empty, error, polling, command, revision, and DEV states
 - Expanded backend MockMvc and frontend Vitest/React Testing Library/MSW test coverage
+- Final demo documentation, runbook, API examples, demo script, and known limitations
 
 Documentation:
 
 - compact project context in `docs/context.md`
 - execution map in `docs/tasks.md`
-- refined API, architecture, state, polling, optimistic update, async command, conflict, DEV panel, demo, and roadmap plans
+- final runbook in `docs/runbook.md`
+- finalized demo scenarios in `docs/demo-scenarios.md`
+- refined API, architecture, state, polling, optimistic update, async command, conflict, DEV panel, demo, deploy, and roadmap docs
 
 ## Tech Stack
 
@@ -63,6 +66,13 @@ Documentation:
 
 ## Local Run
 
+Install frontend dependencies once:
+
+```bash
+cd frontend
+npm install
+```
+
 Backend:
 
 ```bash
@@ -74,8 +84,20 @@ Frontend:
 
 ```bash
 cd frontend
-npm install
 npm run dev
+```
+
+Open:
+
+- frontend: http://localhost:5173
+- backend health: http://localhost:8080/api/health
+- Swagger: http://localhost:8080/swagger-ui.html
+
+If local Maven is unavailable, use Docker Compose:
+
+```bash
+docker compose build
+docker compose up
 ```
 
 ## Docker Compose
@@ -138,6 +160,62 @@ Required Railway env:
 - Backend reset demo state: POST http://localhost:8080/api/dev/reset
 - Swagger: http://localhost:8080/swagger-ui.html
 
-## Next Development Stage
+## API Examples
 
-The next implementation stage is final demo documentation and runbook material. It is intentionally not implemented yet.
+List WorkItems:
+
+```bash
+curl http://localhost:8080/api/work-items
+```
+
+Update a WorkItem:
+
+```bash
+curl -X PATCH http://localhost:8080/api/work-items/wi-1 \
+  -H "Content-Type: application/json" \
+  -d '{"status":"in_progress","priority":"high","tags":["intake","backend","demo"]}'
+```
+
+Run an async command:
+
+```bash
+curl -X POST http://localhost:8080/api/work-items/wi-1/commands \
+  -H "Content-Type: application/json" \
+  -d '{"type":"complete"}'
+```
+
+Trigger rollback demo:
+
+```bash
+curl -X POST http://localhost:8080/api/dev/fail-next-request
+```
+
+Trigger conflict demo:
+
+```bash
+curl -X POST http://localhost:8080/api/dev/trigger-conflict
+```
+
+## Demo Runbook
+
+Use `docs/runbook.md` as the primary demo script. It covers:
+
+- local run and smoke checks
+- Railway deploy summary
+- API examples
+- classic update
+- polling and external changes
+- optimistic rollback
+- async command
+- DEV panel controls
+- conflict handling
+- stale response handling
+- known limitations
+
+## Known Limitations
+
+- Backend storage is in memory and resets on restart/redeploy.
+- There is no auth, external DB, Redis, WebSocket, external queue, or multi-user model.
+- DEV endpoints are local demo controls, not production admin APIs.
+- Conflict/stale scenarios are deterministic demos, not a full collaborative editing system.
+- Railway deployment is prepared and documented; actual Railway service creation remains manual unless performed separately.
