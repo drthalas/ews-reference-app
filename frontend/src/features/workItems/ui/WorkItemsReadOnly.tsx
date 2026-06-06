@@ -3,6 +3,7 @@ import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import SyncIcon from '@mui/icons-material/Sync';
+import TimelineIcon from '@mui/icons-material/Timeline';
 import {
   Alert,
   Box,
@@ -13,6 +14,7 @@ import {
   FormControlLabel,
   FormControl,
   Grid,
+  IconButton,
   InputLabel,
   LinearProgress,
   List,
@@ -21,17 +23,20 @@ import {
   MenuItem,
   Paper,
   Select,
+  Skeleton,
   Stack,
   Switch,
   TextField,
+  Tooltip,
   Typography,
 } from '@mui/material';
 import { skipToken } from '@reduxjs/toolkit/query';
 import { useEffect, useMemo, useState } from 'react';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import type { RootState } from '../../../app/store';
 import { DevPanel } from '../../devPanel/ui/DevPanel';
 import {
+  workItemsApi,
   useGetCommandQuery,
   useGetWorkItemQuery,
   useGetWorkItemsQuery,
@@ -51,7 +56,12 @@ import {
   type WorkItemPriority,
   type WorkItemStatus,
 } from '../model/workItem';
-import type { StaleResponseEvent } from '../model/workItemEventsSlice';
+import {
+  clearWorkItemEvents,
+  type StaleResponseEvent,
+  type WorkItemUiEvent,
+  workItemEventRecorded,
+} from '../model/workItemEventsSlice';
 
 type WorkItemDraft = {
   title: string;
@@ -189,11 +199,14 @@ function getCommandStatus(
 }
 
 export function WorkItemsReadOnly() {
+  const dispatch = useDispatch();
+  const prefetchWorkItem = workItemsApi.usePrefetch('getWorkItem');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [isPollingEnabled, setIsPollingEnabled] = useState(true);
   const [optimisticPendingId, setOptimisticPendingId] = useState<string | null>(null);
   const [lastRefreshAt, setLastRefreshAt] = useState<Date | null>(null);
   const staleEvent = useSelector((state: RootState) => state.workItemEvents.lastStaleResponse);
+  const recentEvents = useSelector((state: RootState) => state.workItemEvents.recentEvents);
   const pollingInterval = isPollingEnabled && !optimisticPendingId ? POLLING_INTERVAL_MS : 0;
   const {
     data: workItems,
@@ -229,6 +242,9 @@ export function WorkItemsReadOnly() {
   } = useGetWorkItemQuery(selectedId ?? skipToken, { pollingInterval });
 
   const selectedWorkItem = selectedFromList ?? selectedDetails ?? null;
+  const prefetchDetails = (id: string) => {
+    prefetchWorkItem(id, { ifOlderThan: 20 });
+  };
   const reloadSelectedWorkItem = () => {
     refetch();
     if (selectedId) {
@@ -239,9 +255,14 @@ export function WorkItemsReadOnly() {
   if (isListLoading) {
     return (
       <Paper variant="outlined" sx={{ p: 3 }}>
-        <Stack direction="row" spacing={1.5} alignItems="center">
-          <CircularProgress size={22} />
-          <Typography>Loading WorkItems</Typography>
+        <Stack spacing={1.5}>
+          <Stack direction="row" spacing={1.5} alignItems="center">
+            <CircularProgress size={22} />
+            <Typography>Загружаем WorkItems</Typography>
+          </Stack>
+          <Skeleton variant="rounded" height={48} />
+          <Skeleton variant="rounded" height={48} />
+          <Skeleton variant="rounded" height={48} />
         </Stack>
       </Paper>
     );
@@ -258,7 +279,7 @@ export function WorkItemsReadOnly() {
           </Button>
         }
       >
-        WorkItems are unavailable. Check that the backend is running and try again.
+        WorkItems недоступны. Проверьте backend и повторите запрос.
       </Alert>
     );
   }
@@ -268,10 +289,11 @@ export function WorkItemsReadOnly() {
       <Paper variant="outlined" sx={{ p: 3 }}>
         <Stack spacing={1} alignItems="flex-start">
           <AssignmentTurnedInIcon color="disabled" />
-          <Typography variant="h6">No WorkItems</Typography>
+          <Typography variant="h6">WorkItems не найдены</Typography>
           <Typography color="text.secondary">
-            The backend returned an empty list. Seed data should appear here when the API is ready.
+            Backend вернул пустой список. Seed data можно восстановить через DEV panel reset.
           </Typography>
+          <DevPanel selectedWorkItemId={selectedId} onRefreshWorkItems={refetch} />
         </Stack>
       </Paper>
     );
@@ -280,11 +302,12 @@ export function WorkItemsReadOnly() {
   return (
     <Stack spacing={2}>
       <Alert severity="info" icon={<InfoOutlinedIcon />}>
-        Этап 10: conflict handling показывает 409 state, а stale response protection
-        игнорирует устаревшие revisions.
+        Этап 11: prefetch прогревает details на hover/focus, а UI показывает состояние
+        polling, revision, операций и edge cases компактно.
       </Alert>
 
       {staleEvent ? <StaleResponseAlert event={staleEvent} /> : null}
+      <StateLog events={recentEvents} onClear={() => dispatch(clearWorkItemEvents())} />
 
       <Paper variant="outlined" sx={{ p: 2 }}>
         <Stack
@@ -308,21 +331,22 @@ export function WorkItemsReadOnly() {
               size="small"
               label={
                 optimisticPendingId
-                  ? 'Paused for optimistic update'
+                  ? 'Пауза на optimistic update'
                   : isListFetching
-                    ? 'Polling refresh...'
+                    ? 'Polling refresh'
                     : `${POLLING_INTERVAL_MS / 1000}s interval`
               }
               color={isPollingEnabled ? 'primary' : 'default'}
               variant="outlined"
             />
+            <Chip size="small" label="Prefetch: hover/focus" variant="outlined" />
           </Stack>
           <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
             <Typography variant="body2" color="text.secondary">
-              Last refresh: {lastRefreshAt ? formatDate(lastRefreshAt) : 'not yet'}
+              Last refresh: {lastRefreshAt ? formatDate(lastRefreshAt) : 'ещё не было'}
             </Typography>
             <Button size="small" startIcon={<RefreshIcon />} onClick={() => refetch()}>
-              Refresh
+              Обновить
             </Button>
             <DevPanel selectedWorkItemId={selectedId} onRefreshWorkItems={refetch} />
           </Stack>
@@ -344,13 +368,14 @@ export function WorkItemsReadOnly() {
                 </Stack>
               </Box>
               <Divider />
-              <List disablePadding>
+              <List disablePadding sx={{ maxHeight: { md: 640 }, overflow: 'auto' }}>
                 {workItems.map((workItem) => (
                   <WorkItemListRow
                     key={workItem.id}
                     workItem={workItem}
                     selected={workItem.id === selectedId}
                     onSelect={() => setSelectedId(workItem.id)}
+                    onPrefetch={() => prefetchDetails(workItem.id)}
                   />
                 ))}
               </List>
@@ -367,6 +392,7 @@ export function WorkItemsReadOnly() {
             onOptimisticPendingChange={setOptimisticPendingId}
             onReloadFromBackend={reloadSelectedWorkItem}
             staleEvent={staleEvent}
+            onRecordEvent={(event) => dispatch(workItemEventRecorded(event))}
           />
         </Grid>
       </Grid>
@@ -378,15 +404,19 @@ function WorkItemListRow({
   workItem,
   selected,
   onSelect,
+  onPrefetch,
 }: {
   workItem: WorkItem;
   selected: boolean;
   onSelect: () => void;
+  onPrefetch: () => void;
 }) {
   return (
     <ListItemButton
       selected={selected}
       onClick={onSelect}
+      onFocus={onPrefetch}
+      onMouseEnter={onPrefetch}
       sx={{
         alignItems: 'flex-start',
         borderLeft: 3,
@@ -422,16 +452,21 @@ function WorkItemListRow({
                 <Chip
                   size="small"
                   color="secondary"
-                  label={`pending ${workItem.pendingOperation}`}
+                  label={`operation ${workItem.pendingOperation}`}
                 />
               ) : null}
             </Stack>
           </Stack>
         }
         secondary={
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-            {workItem.assignee ? `Assignee: ${workItem.assignee}` : 'Unassigned'}
-          </Typography>
+          <Stack spacing={0.5} sx={{ mt: 1 }}>
+            <Typography variant="body2" color="text.secondary">
+              {workItem.assignee ? `Исполнитель: ${workItem.assignee}` : 'Без исполнителя'}
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              Updated: {formatDate(workItem.updatedAt)}
+            </Typography>
+          </Stack>
         }
       />
     </ListItemButton>
@@ -444,6 +479,57 @@ function StaleResponseAlert({ event }: { event: StaleResponseEvent }) {
       Stale response ignored: {event.workItemId} from {event.source} returned rev{' '}
       {event.incomingRevision}, current cache kept rev {event.currentRevision}.
     </Alert>
+  );
+}
+
+function getEventText(event: WorkItemUiEvent) {
+  if (event.type === 'stale') {
+    return `${event.workItemId}: stale ${event.source} rev ${event.incomingRevision} ignored, kept rev ${event.currentRevision}`;
+  }
+  return event.workItemId ? `${event.workItemId}: ${event.message}` : event.message;
+}
+
+function StateLog({ events, onClear }: { events: WorkItemUiEvent[]; onClear: () => void }) {
+  if (!events.length) {
+    return null;
+  }
+
+  return (
+    <Paper variant="outlined" sx={{ p: 1.5 }}>
+      <Stack spacing={1}>
+        <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between">
+          <Stack direction="row" spacing={1} alignItems="center">
+            <TimelineIcon color="action" fontSize="small" />
+            <Typography variant="subtitle2">State log</Typography>
+          </Stack>
+          <Tooltip title="Очистить локальный журнал">
+            <IconButton size="small" onClick={onClear}>
+              <RefreshIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        </Stack>
+        <Stack direction="row" spacing={1} flexWrap="wrap">
+          {events.map((event) => (
+            <Chip
+              key={`${event.type}-${event.type === 'stale' ? event.ignoredAt : event.createdAt}-${getEventText(event)}`}
+              size="small"
+              color={
+                event.type === 'error'
+                  ? 'error'
+                  : event.type === 'warning' || event.type === 'stale'
+                    ? 'warning'
+                    : event.type === 'success'
+                      ? 'success'
+                      : 'default'
+              }
+              variant="outlined"
+              label={getEventText(event)}
+              sx={{ maxWidth: '100%', '& .MuiChip-label': { overflow: 'hidden', textOverflow: 'ellipsis' } }}
+            />
+          ))}
+        </Stack>
+      </Stack>
+    </Paper>
   );
 }
 
@@ -496,6 +582,7 @@ function WorkItemDetails({
   onOptimisticPendingChange,
   onReloadFromBackend,
   staleEvent,
+  onRecordEvent,
 }: {
   workItem: WorkItem | null;
   isLoading: boolean;
@@ -504,10 +591,12 @@ function WorkItemDetails({
   onOptimisticPendingChange: (id: string | null) => void;
   onReloadFromBackend: () => void;
   staleEvent: StaleResponseEvent | null;
+  onRecordEvent: (event: Omit<Exclude<WorkItemUiEvent, StaleResponseEvent>, 'createdAt'>) => void;
 }) {
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState<WorkItemDraft | null>(null);
   const [activeOperationId, setActiveOperationId] = useState<string | null>(null);
+  const [lastCommandNoticeId, setLastCommandNoticeId] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [conflictState, setConflictState] = useState<ConflictState | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -546,23 +635,39 @@ function WorkItemDetails({
       return;
     }
 
+    if (commandOperation.operationId === lastCommandNoticeId) {
+      return;
+    }
+
     if (commandOperation.status === 'completed') {
-      setSuccessMessage(`Async command ${commandOperation.operationId} completed.`);
+      setSuccessMessage(`Async command ${commandOperation.operationId} завершена.`);
+      setLastCommandNoticeId(commandOperation.operationId);
+      onRecordEvent({
+        type: 'success',
+        workItemId: commandOperation.workItemId,
+        message: `command ${commandOperation.operationId} completed`,
+      });
       setActiveOperationId(null);
     }
 
     if (commandOperation.status === 'failed') {
       setFormError(commandOperation.error ?? `Async command ${commandOperation.operationId} failed.`);
+      setLastCommandNoticeId(commandOperation.operationId);
+      onRecordEvent({
+        type: 'error',
+        workItemId: commandOperation.workItemId,
+        message: `command ${commandOperation.operationId} failed`,
+      });
       setActiveOperationId(null);
     }
-  }, [commandOperation]);
+  }, [commandOperation, lastCommandNoticeId, onRecordEvent]);
 
   if (isLoading) {
     return (
       <Paper variant="outlined" sx={{ p: 3, height: '100%' }}>
         <Stack direction="row" spacing={1.5} alignItems="center">
           <CircularProgress size={22} />
-          <Typography>Loading selected WorkItem</Typography>
+          <Typography>Загружаем details выбранного WorkItem</Typography>
         </Stack>
       </Paper>
     );
@@ -571,7 +676,7 @@ function WorkItemDetails({
   if (hasError) {
     return (
       <Alert severity="error" icon={<ErrorOutlineIcon />}>
-        Selected WorkItem details could not be loaded.
+        Details выбранного WorkItem не загрузились. Список остаётся доступен.
       </Alert>
     );
   }
@@ -579,7 +684,7 @@ function WorkItemDetails({
   if (!workItem) {
     return (
       <Paper variant="outlined" sx={{ p: 3, height: '100%' }}>
-        <Typography color="text.secondary">Select a WorkItem to see details.</Typography>
+        <Typography color="text.secondary">Выберите WorkItem, чтобы увидеть details.</Typography>
       </Paper>
     );
   }
@@ -615,6 +720,11 @@ function WorkItemDetails({
     setConflictState(null);
     setIsEditing(false);
     setSuccessMessage('Данные обновляются с backend.');
+    onRecordEvent({
+      type: 'info',
+      workItemId: workItem.id,
+      message: 'conflict resolved by backend reload',
+    });
   };
 
   const saveDraft = async (mode: 'classic' | 'optimistic') => {
@@ -641,6 +751,11 @@ function WorkItemDetails({
           ? 'Optimistic update подтверждён backend'
           : 'Изменения сохранены'
       );
+      onRecordEvent({
+        type: 'success',
+        workItemId: saved.id,
+        message: mode === 'optimistic' ? 'optimistic save confirmed' : 'server-confirmed save',
+      });
       setIsEditing(false);
     } catch (error) {
       if (mode === 'optimistic') {
@@ -649,6 +764,11 @@ function WorkItemDetails({
       const conflict = getConflictState(error);
       if (conflict) {
         setConflictState(conflict);
+        onRecordEvent({
+          type: 'warning',
+          workItemId: conflict.workItemId ?? workItem.id,
+          message: `conflict ${conflict.code}`,
+        });
         setFormError(null);
         setSuccessMessage(null);
         return;
@@ -678,7 +798,13 @@ function WorkItemDetails({
         command: { type: 'complete' },
       }).unwrap();
       setActiveOperationId(submitted.operationId);
-      setSuccessMessage(`Async command ${submitted.operationId} accepted by backend.`);
+      setLastCommandNoticeId(null);
+      setSuccessMessage(`Async command ${submitted.operationId} принята backend.`);
+      onRecordEvent({
+        type: 'info',
+        workItemId: workItem.id,
+        message: `command ${submitted.operationId} accepted`,
+      });
     } catch (error) {
       setFormError(
         getMutationErrorMessage(
@@ -699,7 +825,7 @@ function WorkItemDetails({
         {formError ? <Alert severity="error">{formError}</Alert> : null}
         {commandError ? (
           <Alert severity="error">
-            Command status could not be loaded. Polling will still refresh WorkItem data.
+            Command status не загрузился. Polling продолжит обновлять WorkItem.
           </Alert>
         ) : null}
 
@@ -710,7 +836,7 @@ function WorkItemDetails({
             </Typography>
             <Typography variant="body2" color="text.secondary">
               {workItem.id}
-              {isFetching ? ' / refreshing details' : ''}
+              {isFetching ? ' / details refresh' : ''}
             </Typography>
           </Stack>
           <Stack direction="row" spacing={1} flexWrap="wrap">
@@ -746,7 +872,7 @@ function WorkItemDetails({
             onChange={updateDraft}
           />
         ) : (
-          <WorkItemReadDetails workItem={workItem} />
+          <WorkItemReadDetails workItem={workItem} commandOperation={commandOperation} />
         )}
 
         {conflictState ? (
@@ -812,22 +938,62 @@ function WorkItemDetails({
         </Stack>
 
         <Alert severity="info">
-          Этап 10 handles conflicts without overwrite and ignores stale polling/detail revisions.
+          Этап 11: details prefetched on hover/focus; состояние операций, revision и edge cases
+          отображается без блокировки основного списка.
         </Alert>
       </Stack>
     </Paper>
   );
 }
 
-function WorkItemReadDetails({ workItem }: { workItem: WorkItem }) {
+function WorkItemReadDetails({
+  workItem,
+  commandOperation,
+}: {
+  workItem: WorkItem;
+  commandOperation: CommandOperation | undefined;
+}) {
   return (
     <Stack spacing={2}>
       <Grid container spacing={2}>
-        <DetailItem label="Assignee" value={workItem.assignee ?? 'Unassigned'} />
+        <DetailItem label="Исполнитель" value={workItem.assignee ?? 'Без исполнителя'} />
         <DetailItem label="Revision" value={`rev ${workItem.revision}`} />
         <DetailItem label="Updated" value={formatDate(workItem.updatedAt)} />
-        <DetailItem label="Pending operation" value={workItem.pendingOperation ?? 'None'} />
+        <DetailItem label="Pending operation" value={workItem.pendingOperation ?? 'Нет'} />
       </Grid>
+
+      {workItem.pendingOperation || commandOperation ? (
+        <Box sx={{ p: 1.5, bgcolor: 'grey.50', border: 1, borderColor: 'divider', borderRadius: 1 }}>
+          <Stack spacing={1}>
+            <Typography variant="subtitle2">Operation state</Typography>
+            <Stack direction="row" spacing={1} flexWrap="wrap">
+              <Chip
+                size="small"
+                color={commandOperation?.status === 'failed' ? 'error' : 'secondary'}
+                label={`operationId ${commandOperation?.operationId ?? workItem.pendingOperation}`}
+              />
+              <Chip
+                size="small"
+                variant="outlined"
+                label={`type complete`}
+              />
+              <Chip
+                size="small"
+                variant="outlined"
+                label={`status ${commandOperation?.status ?? 'pending'}`}
+              />
+              {commandOperation?.createdAt ? (
+                <Chip size="small" variant="outlined" label={`started ${formatDate(commandOperation.createdAt)}`} />
+              ) : null}
+            </Stack>
+            {commandOperation?.error ? (
+              <Typography variant="body2" color="error">
+                {commandOperation.error}
+              </Typography>
+            ) : null}
+          </Stack>
+        </Box>
+      ) : null}
 
       <Stack spacing={1}>
         <Typography variant="subtitle2">Tags</Typography>
@@ -836,7 +1002,7 @@ function WorkItemReadDetails({ workItem }: { workItem: WorkItem }) {
             workItem.tags.map((tag) => <Chip key={tag} size="small" label={tag} />)
           ) : (
             <Typography variant="body2" color="text.secondary">
-              No tags
+              Нет tags
             </Typography>
           )}
         </Stack>

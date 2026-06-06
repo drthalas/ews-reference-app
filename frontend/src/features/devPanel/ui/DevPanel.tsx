@@ -53,18 +53,14 @@ function getErrorMessage(error: unknown, fallback: string) {
 }
 
 function formatSettings(settings: DevSettings) {
-  return JSON.stringify(
-    {
-      responseDelayMs: settings.responseDelayMs,
-      failNextRequest: settings.failNextRequest,
-      failNextCommand: settings.failNextCommand,
-      staleResponseMode: settings.staleResponseMode,
-      conflictMode: settings.conflictMode,
-      lastDevAction: settings.lastDevAction,
-    },
-    null,
-    2
-  );
+  return [
+    `delay ${settings.responseDelayMs} ms`,
+    settings.failNextRequest ? 'fail-next-request armed' : 'request normal',
+    settings.failNextCommand ? 'fail-next-command armed' : 'command normal',
+    settings.staleResponseMode ? 'stale mode on' : 'stale one-shot/off',
+    settings.conflictMode ? 'conflict mode on' : 'conflict one-shot/off',
+    `last: ${settings.lastDevAction}`,
+  ].join(' / ');
 }
 
 export function DevPanel({ selectedWorkItemId, onRefreshWorkItems }: DevPanelProps) {
@@ -117,14 +113,14 @@ export function DevPanel({ selectedWorkItemId, onRefreshWorkItems }: DevPanelPro
     } catch (error) {
       setFeedback({
         severity: 'error',
-        message: getErrorMessage(error, 'DEV action failed. Check backend state and retry.'),
+        message: getErrorMessage(error, 'DEV action не выполнен. Проверьте backend и повторите.'),
       });
     }
   };
 
   const saveSettings = () =>
     runAction(
-      'DEV settings saved.',
+      'DEV settings сохранены.',
       () =>
         updateSettings({
           responseDelayMs,
@@ -134,7 +130,7 @@ export function DevPanel({ selectedWorkItemId, onRefreshWorkItems }: DevPanelPro
     );
 
   const resetState = () =>
-    runAction('Backend demo state reset to deterministic seed data.', () => resetDevState().unwrap(), true);
+    runAction('Backend state сброшен к deterministic seed data.', () => resetDevState().unwrap(), true);
 
   return (
     <>
@@ -153,13 +149,13 @@ export function DevPanel({ selectedWorkItemId, onRefreshWorkItems }: DevPanelPro
                 </Typography>
               </Stack>
               <Typography variant="body2" color="text.secondary">
-                Edge-case controls are local demo tools. Conflict and stale UX is finalized in Этап 10.
+                Локальные demo controls для ошибок, конфликтов, stale responses и reset.
               </Typography>
             </Stack>
 
             {settingsError ? (
               <Alert severity="error">
-                DEV settings could not be loaded. Check that the backend is running.
+                DEV settings не загрузились. Проверьте backend и повторите действие.
               </Alert>
             ) : null}
             {feedback ? <Alert severity={feedback.severity}>{feedback.message}</Alert> : null}
@@ -167,7 +163,7 @@ export function DevPanel({ selectedWorkItemId, onRefreshWorkItems }: DevPanelPro
             <Stack direction="row" spacing={1} flexWrap="wrap">
               <Chip
                 size="small"
-                label={isSettingsFetching ? 'settings refreshing' : 'settings ready'}
+                label={isSettingsFetching ? 'settings refresh' : 'settings ready'}
                 color={settingsError ? 'error' : 'primary'}
                 variant="outlined"
               />
@@ -225,7 +221,7 @@ export function DevPanel({ selectedWorkItemId, onRefreshWorkItems }: DevPanelPro
                 onClick={saveSettings}
                 disabled={isBusy}
               >
-                Save settings
+                Сохранить settings
               </Button>
             </Stack>
 
@@ -240,7 +236,7 @@ export function DevPanel({ selectedWorkItemId, onRefreshWorkItems }: DevPanelPro
                 startIcon={<WarningAmberIcon />}
                 disabled={isBusy}
                 onClick={() =>
-                  runAction('Next WorkItem PATCH will return DEV_FORCED_FAILURE.', () =>
+                  runAction('Следующий WorkItem PATCH вернёт DEV_FORCED_FAILURE.', () =>
                     failNextRequest().unwrap()
                   )
                 }
@@ -252,7 +248,7 @@ export function DevPanel({ selectedWorkItemId, onRefreshWorkItems }: DevPanelPro
                 startIcon={<SyncProblemIcon />}
                 disabled={isBusy}
                 onClick={() =>
-                  runAction('Next async command will complete as failed.', () =>
+                  runAction('Следующая async command завершится failed.', () =>
                     failNextCommand().unwrap()
                   )
                 }
@@ -263,7 +259,7 @@ export function DevPanel({ selectedWorkItemId, onRefreshWorkItems }: DevPanelPro
                 variant="outlined"
                 disabled={isBusy}
                 onClick={() =>
-                  runAction('Next WorkItem read will return a controlled stale response.', () =>
+                  runAction('Следующий WorkItem read вернёт controlled stale response.', () =>
                     triggerStaleResponse().unwrap()
                   )
                 }
@@ -274,7 +270,7 @@ export function DevPanel({ selectedWorkItemId, onRefreshWorkItems }: DevPanelPro
                 variant="outlined"
                 disabled={isBusy}
                 onClick={() =>
-                  runAction('Next WorkItem PATCH will return DEV_CONFLICT.', () =>
+                  runAction('Следующий WorkItem PATCH вернёт DEV_CONFLICT.', () =>
                     triggerConflict().unwrap()
                   )
                 }
@@ -286,13 +282,13 @@ export function DevPanel({ selectedWorkItemId, onRefreshWorkItems }: DevPanelPro
                 disabled={isBusy || !selectedWorkItemId}
                 onClick={() =>
                   runAction(
-                    `External change applied to ${selectedWorkItemId}.`,
+                    `External change применён к ${selectedWorkItemId}.`,
                     () => triggerExternalChange({ id: selectedWorkItemId as string }).unwrap(),
                     true
                   )
                 }
               >
-                External change for selected WorkItem
+                External change для selected WorkItem
               </Button>
               <Button
                 color="warning"
@@ -309,7 +305,7 @@ export function DevPanel({ selectedWorkItemId, onRefreshWorkItems }: DevPanelPro
 
             <Stack spacing={1}>
               <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-                Current state
+                Current settings
               </Typography>
               <Box
                 component="pre"

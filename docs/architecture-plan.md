@@ -4,9 +4,9 @@ EWS Reference App demonstrates frontend-backend interaction patterns in an EWS-l
 
 ## Stage Position
 
-Stages 1 through 10 are complete. The project now has the scaffold, architecture documentation, the backend WorkItem API, frontend RTK Query integration, server-confirmed editing, polling, optimistic update/rollback, Railway deployment preparation, async command flow, DEV panel controls, conflict UI, and stale response protection.
+Stages 1 through 11 are complete. The project now has the scaffold, architecture documentation, the backend WorkItem API, frontend RTK Query integration, server-confirmed editing, polling, optimistic update/rollback, Railway deployment preparation, async command flow, DEV panel controls, conflict UI, stale response protection, detail prefetch, and UX polish.
 
-Stage 11 will add prefetch and UX polish. Broader test coverage remains planned for later stages.
+Stage 12 will add broader test coverage.
 
 ## Monorepo Layout
 

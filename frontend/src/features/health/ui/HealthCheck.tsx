@@ -10,7 +10,7 @@ export function HealthCheck() {
   if (isLoading) {
     return (
       <Alert icon={<HourglassEmptyIcon />} severity="info">
-        Backend health status: loading
+        Backend health: loading
       </Alert>
     );
   }
@@ -18,7 +18,7 @@ export function HealthCheck() {
   if (error) {
     return (
       <Alert icon={<ErrorOutlineIcon />} severity="error">
-        Backend health status: unavailable
+        Backend health: unavailable
       </Alert>
     );
   }
@@ -34,7 +34,7 @@ export function HealthCheck() {
         />
         <Typography variant="body2" color="text.secondary">
           Service: {data?.service ?? 'unknown'}
-          {isFetching ? ' / refreshing' : ''}
+          {isFetching ? ' / health refresh' : ''}
         </Typography>
       </Stack>
     </Box>

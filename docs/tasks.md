@@ -17,7 +17,8 @@ This file is the compact execution map for future work.
 | 8. Async command flow | Done | Command submission, operation status, delayed completion, and pending operation UI. |
 | 9. DEV panel | Done | Local controls for delays, failures, reset, external change, stale response, and conflict demos. |
 | 10. Conflict and stale scenarios | Done | Deterministic conflict handling, reload/cancel conflict UI, and stale response protection. |
-| 11. Prefetch and UX polish | Next | Detail prefetch, improved state badges/logs, responsive polish, and UX refinements. |
+| 11. Prefetch and UX polish | Done | Detail prefetch, improved state badges/logs, responsive polish, and UX refinements. |
+| 12. Expanded testing | Next | Broader backend, frontend, RTK Query, and scenario coverage. |
 
 ## Execution Order
 
@@ -139,6 +140,20 @@ This file is the compact execution map for future work.
 - Added conflict actions: `Обновить с backend` and `Отменить редактирование`.
 - Added stale ignored badge/log in the WorkItem screen and selected details.
 - Kept merge/compare editor, force overwrite, real-time collaboration, WebSocket, auth, Redis, and external DB out of scope.
+
+## Completed Stage 11 Checklist
+
+- Added RTK Query detail prefetch on WorkItem row hover and focus.
+- Kept prefetch unobtrusive through `ifOlderThan` so it does not fire on every render.
+- Improved initial loading with skeleton rows.
+- Improved backend unavailable, selected detail loading/error, empty state, save, command, conflict, and stale response copy.
+- Added compact state log for recent UI-only events and ignored stale responses.
+- Added clear local log action.
+- Improved row metadata with readable `updatedAt`, revision, pending operation, assignee, status, and priority chips.
+- Added operation state block with operation id, type, status, started time, and command error.
+- Polished DEV panel copy, feedback, reset messaging, and compact settings summary.
+- Improved responsive layout with scrollable WorkItem list on desktop and compact drawer width on mobile.
+- Kept new backend endpoints, large scenario additions, Playwright/e2e suite, auth, WebSocket, Redis, and external DB out of scope.
 
 ## Future Implementation Guardrails
 

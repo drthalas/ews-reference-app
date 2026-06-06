@@ -14,14 +14,14 @@ export function App() {
               EWS Reference App
             </Typography>
             <Typography variant="h6" color="text.secondary" sx={{ maxWidth: 720 }}>
-              Этап 10: Conflict handling и stale response сценарии
+              Этап 11: Prefetch и UX polish
             </Typography>
           </Stack>
 
           <Stack spacing={2.5}>
             <Chip
               icon={<CheckCircleIcon />}
-              label="Frontend status: ready"
+              label="Frontend: ready"
               color="primary"
               variant="outlined"
               sx={{ alignSelf: 'flex-start' }}
@@ -34,7 +34,7 @@ export function App() {
 
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems={{ sm: 'center' }}>
             <Typography variant="body1" color="text.secondary" sx={{ flexGrow: 1 }}>
-              Backend API documentation is available through Swagger.
+              Backend API documentation доступна через Swagger.
             </Typography>
             <Button
               href="http://localhost:8080/swagger-ui.html"

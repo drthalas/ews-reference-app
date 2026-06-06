@@ -1,6 +1,6 @@
 # Demo Scenarios
 
-This scaffold does not implement demo scenarios yet.
+This project now implements the core WorkItem demo scenarios through Stage 11. This file remains a compact scenario checklist; the final runbook is planned for Stage 13.
 
 Future scenarios should document expected UI state, API calls, and recovery behavior. The planned order below matches the roadmap.
 
@@ -61,5 +61,11 @@ Future scenarios should document expected UI state, API calls, and recovery beha
 ## 10. Data Prefetch Before Navigation
 
 - API: `GET /api/work-items/{id}`
-- UI: detail route or panel opens with prefetched data when available.
+- UI: focusing or hovering a WorkItem row prefetches details so the selected details panel can reuse warmed cache when available.
 - Recovery: if prefetch fails, detail view performs its own fetch and shows an error if needed.
+
+## 11. UX State Review
+
+- API: existing WorkItem, command, and DEV endpoints.
+- UI: compact state log, polling badges, revision badges, operation metadata, conflict state, stale ignored state, and DEV panel feedback remain visible without blocking normal row interaction.
+- Recovery: clear local log, retry backend refresh, or reset backend state through DEV panel.

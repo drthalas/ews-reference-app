@@ -4,7 +4,7 @@ EWS Reference App is a reference application for demonstrating common frontend-b
 
 ## Current Status
 
-Stages 1 through 10 are complete. Stage 11 is next.
+Stages 1 through 11 are complete. Stage 12 is next.
 
 Implemented:
 
@@ -25,6 +25,8 @@ Implemented:
 - DEV panel for backend-controlled edge cases: delay, failures, external change, stale response, conflict, and reset
 - Conflict handling UI with reload/cancel actions
 - Stale response protection through WorkItem revision comparison
+- WorkItem detail prefetch on row hover/focus
+- UX polish for loading, empty, error, polling, command, revision, and DEV states
 
 Documentation:
 
@@ -119,4 +121,4 @@ Required Railway env:
 
 ## Next Development Stage
 
-The next implementation stage is prefetch and UX polish. Broader tests and final demo documentation are planned but intentionally not implemented yet.
+The next implementation stage is expanded testing. Final demo documentation is planned but intentionally not implemented yet.

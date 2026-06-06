@@ -13,8 +13,8 @@
 8. Async command flow - done.
 9. DEV panel - done.
 10. Conflict and stale scenarios - done.
-11. Prefetch - next.
-12. Tests - planned.
+11. Prefetch - done.
+12. Tests - next.
 13. Final demo documentation - planned.
 
 ## Stage Details
@@ -143,11 +143,19 @@ Completed implementation stage:
 
 ### 11. Prefetch
 
-Next stage: add detail prefetch behavior before navigation or panel open and polish the UX.
+Completed implementation stage:
+
+- added `getWorkItem` prefetch on WorkItem row hover/focus
+- kept prefetch bounded with RTK Query `ifOlderThan`
+- improved loading, empty, error, save, command, stale, and conflict states
+- added compact UI event log and clear local log action
+- improved revision, updatedAt, pending operation, command status, polling, and stale state display
+- polished DEV panel copy, feedback, disabled states, and settings summary
+- kept new backend mechanics and expanded test suites out of scope
 
 ### 12. Tests
 
-Broaden backend, frontend, and scenario coverage for implemented behavior.
+Next stage: broaden backend, frontend, and scenario coverage for implemented behavior.
 
 ### 13. Final Demo Documentation
 

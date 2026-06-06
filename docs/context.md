@@ -19,9 +19,10 @@ EWS Reference App is a local reference app for demonstrating frontend-backend in
 - Stage 8 is done: async command flow.
 - Stage 9 is done: DEV panel for edge cases.
 - Stage 10 is done: conflict and stale response scenarios.
-- Stage 11 is next: prefetch and UX polish.
+- Stage 11 is done: prefetch and UX polish.
+- Stage 12 is next: expanded testing.
 
-Stage 10 adds user-facing conflict handling and stale response protection. Conflict PATCH responses show a dedicated conflict state with revision details and reload/cancel actions. WorkItem RTK Query caches compare incoming revisions with the freshest known cache entry and ignore stale list/detail responses without visually downgrading selected details.
+Stage 11 adds WorkItem detail prefetch on list hover/focus, polished loading/error/empty states, clearer state badges, compact UI event log, operation metadata, and DEV panel copy/layout improvements. No new backend mechanics were added.
 
 ## Repository Shape
 

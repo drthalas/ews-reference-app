@@ -2,7 +2,7 @@
 
 The frontend is a Vite React application written in TypeScript.
 
-Stage 10 adds conflict UI and stale response protection while keeping the normal WorkItem flows visible.
+Stage 11 adds detail prefetch and UX polish while keeping the normal WorkItem flows visible.
 
 ## Layers
 
@@ -23,6 +23,7 @@ WorkItem server state belongs in `features/workItems/api`. Current typed endpoin
 - async command submission
 - command status polling
 - polling options for active WorkItem queries
+- detail prefetch on WorkItem row hover/focus
 
 DEV controls belong in `features/devPanel/api`. Current typed endpoints cover:
 
@@ -72,8 +73,11 @@ The WorkItem feature is compact and operational:
 - a separate right-side DEV panel exposes backend-controlled edge-case actions
 - conflict saves show a dedicated conflict state with revision context
 - stale list/detail responses are ignored when their revision is older than the freshest known cache entry
+- WorkItem rows prefetch details on hover/focus
+- compact state log shows recent UI-only events
+- operation state shows operation id, type, status, and started time
 
-Later stages will add prefetch behavior and broader UX polish.
+Later stages will broaden test coverage.
 
 ## Stale Response Protection
 
@@ -85,4 +89,4 @@ MUI provides layout, typography, controls, and theme configuration. Components s
 
 ## Module Boundary
 
-The `workItems` frontend feature contains WorkItem API bindings, command API bindings, list UI, detail UI, classic edit controls, optimistic edit controls, polling controls, and async command controls. The `devPanel` feature contains DEV API bindings, settings controls, one-shot edge-case actions, and backend reset controls. Shared API transport stays in `shared/api/baseApi.ts`; domain-specific DTOs stay in the feature module.
+The `workItems` frontend feature contains WorkItem API bindings, command API bindings, list UI, detail UI, prefetch behavior, classic edit controls, optimistic edit controls, polling controls, async command controls, conflict UI, stale response UI state, and compact UI event logging. The `devPanel` feature contains DEV API bindings, settings controls, one-shot edge-case actions, and backend reset controls. Shared API transport stays in `shared/api/baseApi.ts`; domain-specific DTOs stay in the feature module.

@@ -49,8 +49,8 @@ export type ApiError = {
 };
 
 export const workItemStatusLabels: Record<WorkItemStatus, string> = {
-  new: 'New',
-  in_progress: 'In progress',
+  new: 'Новый',
+  in_progress: 'В работе',
   blocked: 'Blocked',
   done: 'Done',
 };
