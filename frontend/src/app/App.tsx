@@ -2,22 +2,23 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { Box, Button, Chip, Container, Divider, Stack, Typography } from '@mui/material';
 import { HealthCheck } from '../features/health/ui/HealthCheck';
+import { WorkItemsReadOnly } from '../features/workItems/ui/WorkItemsReadOnly';
 
 export function App() {
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
-      <Container maxWidth="md" sx={{ py: { xs: 4, md: 7 } }}>
+      <Container maxWidth="lg" sx={{ py: { xs: 3, md: 5 } }}>
         <Stack spacing={4}>
           <Stack spacing={1.5}>
             <Typography component="h1" variant="h3" sx={{ fontWeight: 700 }}>
               EWS Reference App
             </Typography>
             <Typography variant="h6" color="text.secondary" sx={{ maxWidth: 720 }}>
-              Initial scaffold for frontend-backend reference patterns
+              Этап 4: read-only frontend integration
             </Typography>
           </Stack>
 
-          <Stack spacing={2}>
+          <Stack spacing={2.5}>
             <Chip
               icon={<CheckCircleIcon />}
               label="Frontend status: ready"
@@ -26,6 +27,7 @@ export function App() {
               sx={{ alignSelf: 'flex-start' }}
             />
             <HealthCheck />
+            <WorkItemsReadOnly />
           </Stack>
 
           <Divider />

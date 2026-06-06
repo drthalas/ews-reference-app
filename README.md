@@ -16,6 +16,7 @@ Implemented scaffold:
 - Docker Compose for local frontend and backend services
 - Architecture and roadmap documentation
 - Backend WorkItem list/detail/patch API with deterministic in-memory data
+- Read-only frontend WorkItem list/detail integration through RTK Query
 
 Current documentation stage:
 
@@ -82,4 +83,4 @@ docker compose up
 
 ## Next Development Stage
 
-The next implementation stage is frontend RTK Query integration for WorkItem data. Polling, optimistic update, async commands, DEV panel, conflict scenarios, prefetch, and broader tests are planned but intentionally not implemented in the current scaffold.
+The next implementation stage is server-confirmed WorkItem updates from the frontend. Polling, optimistic update, async commands, DEV panel, conflict scenarios, prefetch, and broader tests are planned but intentionally not implemented in the current scaffold.

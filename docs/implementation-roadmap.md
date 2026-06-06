@@ -5,8 +5,8 @@
 1. Initial scaffold - done.
 2. Architecture docs refinement - done.
 3. Backend WorkItem API - done.
-4. Frontend RTK Query integration - next.
-5. Server-confirmed update - planned.
+4. Frontend RTK Query integration - done.
+5. Server-confirmed update - next.
 6. Polling - planned.
 7. Optimistic update - planned.
 8. Async command flow - planned.
@@ -54,11 +54,17 @@ Completed implementation stage:
 
 ### 4. Frontend RTK Query Integration
 
-Next stage: add typed WorkItem models, API endpoints, generated hooks, and basic list rendering.
+Completed implementation stage:
+
+- added typed WorkItem models
+- added `getWorkItems` and `getWorkItem` RTK Query endpoints
+- added read-only WorkItem list and selected item details
+- added loading, error, and empty states
+- kept editing out of scope
 
 ### 5. Server-Confirmed Update
 
-Add edit controls that wait for server confirmation before finalizing UI state.
+Next stage: add edit controls that wait for server confirmation before finalizing UI state.
 
 ### 6. Polling
 

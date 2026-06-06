@@ -9,7 +9,8 @@ This file is the compact execution map for future work.
 | 1. Initial scaffold | Done | React/Vite frontend, Spring Boot backend, health check, Docker Compose, initial docs. |
 | 2. Architecture docs refinement | Done | Compact context, task map, API plans, policies, demo scenarios, and roadmap. |
 | 3. Backend WorkItem API | Done | In-memory domain model, list/detail/update endpoints, validation, errors, and tests. |
-| 4. Frontend RTK Query integration | Next | WorkItem models, feature API bindings, generated hooks, and basic list rendering. |
+| 4. Frontend RTK Query integration | Done | WorkItem models, feature API bindings, generated hooks, list rendering, and read-only detail panel. |
+| 5. Server-confirmed update | Next | PATCH UI, saving state, success/error feedback, and RTK Query cache reconciliation. |
 
 ## Execution Order
 
@@ -36,6 +37,15 @@ This file is the compact execution map for future work.
 - Added `PATCH /api/work-items/{id}`.
 - Added validation, revision increment on actual change, updated timestamps, and consistent `ApiError`.
 - Added backend MockMvc coverage for list, detail, patch, revision, not found, and validation behavior.
+
+## Completed Stage 4 Checklist
+
+- Added `features/workItems/model` with WorkItem, status, and priority types.
+- Added `features/workItems/api` with `getWorkItems` and `getWorkItem` endpoints injected into the shared RTK Query API.
+- Added `features/workItems/ui` with read-only list, selected item details, loading, error, and empty states.
+- Added status and priority badges, revision display, updatedAt display, and tags.
+- Integrated WorkItems UI into the main app while keeping backend health status visible.
+- Kept editing, PATCH UI, polling, optimistic updates, async commands, DEV panel, and conflict scenarios out of scope.
 
 ## Future Implementation Guardrails
 

@@ -2,7 +2,7 @@
 
 RTK Query is the default owner of server state.
 
-The current scaffold has a shared `baseApi` and a health endpoint. WorkItem endpoints are planned for later stages.
+The current frontend has a shared `baseApi`, a health endpoint, and read-only WorkItem endpoints.
 
 ## Rules
 
@@ -16,23 +16,26 @@ The current scaffold has a shared `baseApi` and a health endpoint. WorkItem endp
 
 ## Planned Tags
 
-Future WorkItem endpoints should use tags that support narrow invalidation:
+WorkItem endpoints use tags that support narrow invalidation:
 
 - `WorkItem` with `LIST` for list refresh.
 - `WorkItem` with item id for single-item updates.
 - `Command` with operation id for async command status.
 
-## Planned Endpoints
+## Implemented WorkItem Endpoints
 
 - `getWorkItems`: `GET /api/work-items`
 - `getWorkItem`: `GET /api/work-items/{id}`
+
+## Planned Mutation And Command Endpoints
+
 - `updateWorkItem`: `PATCH /api/work-items/{id}`
 - `submitWorkItemCommand`: `POST /api/work-items/{id}/commands`
 - `getCommand`: `GET /api/commands/{operationId}`
 
 ## Cache And Reconciliation
 
-WorkItem list queries, mutations, command status queries, and prefetch flows should be modeled through RTK Query endpoints.
+WorkItem list and detail queries are modeled through RTK Query endpoints. Mutations, command status queries, and prefetch flows should also be modeled through RTK Query when their stages begin.
 
 Successful server-confirmed updates should update the relevant item cache and invalidate list data when list ordering or filtering could change. Optimistic updates should use RTK Query cache patching and define rollback behavior before implementation.
 

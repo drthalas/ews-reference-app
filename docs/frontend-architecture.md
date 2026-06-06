@@ -2,7 +2,7 @@
 
 The frontend is a Vite React application written in TypeScript.
 
-Stage 2 documents the future shape only. The current runtime still contains the application shell and health query.
+Stage 4 adds read-only WorkItem list/detail UI through RTK Query while keeping the application shell and health query visible.
 
 ## Layers
 
@@ -14,14 +14,12 @@ Stage 2 documents the future shape only. The current runtime still contains the 
 
 RTK Query owns server state. Feature APIs inject endpoints into the shared base API.
 
-Future WorkItem server state belongs in a `features/workItems/api` module. It should define typed endpoints for:
+WorkItem server state belongs in `features/workItems/api`. Stage 4 defines typed endpoints for:
 
 - list retrieval
 - detail retrieval
-- server-confirmed patch updates
-- async command submission
-- command status lookup
-- DEV endpoint calls when DEV controls are introduced
+
+Later stages will add server-confirmed patch updates, async command submission, command status lookup, and DEV endpoint calls when those controls are introduced.
 
 ## UI State
 
@@ -38,13 +36,13 @@ Examples of UI-only state:
 
 ## Planned WorkItem Feature
 
-The future WorkItem feature should be compact and operational:
+The WorkItem feature is compact and operational:
 
 - list rows display title, status, priority, assignee, revision, and update state
-- row actions submit narrow updates or commands
-- detail view can be prefetched before navigation
-- conflict state is visible and offers refresh/retry choices
-- polling state is visible without replacing newer local/server data
+- selected item details show status, priority, assignee, revision, updatedAt, and tags
+- loading, error, and empty states are visible
+
+Later stages will add row actions, prefetch, conflict state, polling state, and mutation behavior.
 
 ## Stale Response Protection
 
@@ -56,4 +54,4 @@ MUI provides layout, typography, controls, and theme configuration. Components s
 
 ## Module Boundary
 
-The future `workItems` frontend feature will contain WorkItem API bindings, list UI, edit controls, and scenario-specific state where needed. Shared API transport stays in `shared/api/baseApi.ts`; domain-specific DTOs stay in the feature module.
+The `workItems` frontend feature contains WorkItem API bindings, read-only list UI, and detail UI. Shared API transport stays in `shared/api/baseApi.ts`; domain-specific DTOs stay in the feature module.
