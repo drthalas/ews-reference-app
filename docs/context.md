@@ -20,9 +20,10 @@ EWS Reference App is a local reference app for demonstrating frontend-backend in
 - Stage 9 is done: DEV panel for edge cases.
 - Stage 10 is done: conflict and stale response scenarios.
 - Stage 11 is done: prefetch and UX polish.
-- Stage 12 is next: expanded testing.
+- Stage 12 is done: expanded backend and frontend testing.
+- Stage 13 is next: final demo documentation.
 
-Stage 11 adds WorkItem detail prefetch on list hover/focus, polished loading/error/empty states, clearer state badges, compact UI event log, operation metadata, and DEV panel copy/layout improvements. No new backend mechanics were added.
+Stage 12 adds broader backend MockMvc coverage, frontend Vitest/React Testing Library/MSW coverage, deterministic backend test resets, and documented test commands. No new product features, backend scenarios, or endpoints were added.
 
 ## Repository Shape
 
@@ -31,6 +32,8 @@ Stage 11 adds WorkItem detail prefetch on list hover/focus, polished loading/err
 - `docs/`: architecture notes, policies, demo scenarios, and roadmap.
 - `docker-compose.yml`: local frontend and backend services.
 - `docs/deploy-railway.md`: Railway demo-deploy runbook for separate frontend and backend services.
+- Frontend test command: `cd frontend && npm test -- --run`.
+- Backend test command: `cd backend && mvn test`, or Docker Maven when local `mvn` is unavailable.
 
 ## Existing Runtime
 

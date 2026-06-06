@@ -2,7 +2,7 @@
 
 The frontend is a Vite React application written in TypeScript.
 
-Stage 11 adds detail prefetch and UX polish while keeping the normal WorkItem flows visible.
+Stage 12 adds frontend test coverage for the implemented WorkItem and DEV panel flows while keeping the normal runtime architecture unchanged.
 
 ## Layers
 
@@ -77,7 +77,18 @@ The WorkItem feature is compact and operational:
 - compact state log shows recent UI-only events
 - operation state shows operation id, type, status, and started time
 
-Later stages will broaden test coverage.
+Stage 12 introduces Vitest, React Testing Library, jsdom, user-event, jest-dom, and MSW for frontend testing. Tests render feature components with an isolated Redux store from `createAppStore` and mock backend APIs through MSW instead of duplicating server state in UI slices.
+
+Current frontend tests cover:
+
+- WorkItem loading, error, empty, list, and selected detail states
+- detail prefetch on row hover/focus
+- edit cancel behavior
+- server-confirmed save request/feedback
+- optimistic rollback feedback
+- conflict UI rendering
+- stale response event log rendering
+- DEV panel opening and disabled selected-item actions
 
 ## Stale Response Protection
 

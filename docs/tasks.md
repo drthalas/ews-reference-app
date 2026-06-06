@@ -18,7 +18,8 @@ This file is the compact execution map for future work.
 | 9. DEV panel | Done | Local controls for delays, failures, reset, external change, stale response, and conflict demos. |
 | 10. Conflict and stale scenarios | Done | Deterministic conflict handling, reload/cancel conflict UI, and stale response protection. |
 | 11. Prefetch and UX polish | Done | Detail prefetch, improved state badges/logs, responsive polish, and UX refinements. |
-| 12. Expanded testing | Next | Broader backend, frontend, RTK Query, and scenario coverage. |
+| 12. Expanded testing | Done | Broader backend MockMvc coverage plus frontend Vitest/RTL/MSW coverage. |
+| 13. Final demo documentation | Next | Final runbook, API examples, demo script, and known limitations. |
 
 ## Execution Order
 
@@ -35,7 +36,7 @@ This file is the compact execution map for future work.
 11. Add DEV settings and simulation endpoints.
 12. Add conflict and stale response scenarios.
 13. Add prefetch scenario.
-14. Add final demo documentation and broader tests.
+14. Add final demo documentation.
 
 ## Completed Stage 3 Checklist
 
@@ -154,6 +155,18 @@ This file is the compact execution map for future work.
 - Polished DEV panel copy, feedback, reset messaging, and compact settings summary.
 - Improved responsive layout with scrollable WorkItem list on desktop and compact drawer width on mobile.
 - Kept new backend endpoints, large scenario additions, Playwright/e2e suite, auth, WebSocket, Redis, and external DB out of scope.
+
+## Completed Stage 12 Checklist
+
+- Added frontend Vitest test runner scripts.
+- Added React Testing Library, jsdom, user-event, jest-dom, and MSW test setup.
+- Added reusable frontend `createAppStore` factory for isolated test stores.
+- Added MSW handlers for WorkItem, command, and DEV panel APIs.
+- Added frontend coverage for WorkItem loading, list/detail rendering, prefetch on hover, backend error, empty state, edit cancel, classic save, optimistic rollback, conflict UI, stale event log, and DEV panel disabled selected-item actions.
+- Added deterministic backend reset hooks to controller tests that mutate in-memory state.
+- Added backend coverage for invalid WorkItem status and priority validation.
+- Added backend coverage for rejecting a second async command while a WorkItem already has a pending operation.
+- Kept new product features, new backend scenarios, new DEV triggers, and Playwright/e2e suite out of scope.
 
 ## Future Implementation Guardrails
 

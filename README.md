@@ -4,7 +4,7 @@ EWS Reference App is a reference application for demonstrating common frontend-b
 
 ## Current Status
 
-Stages 1 through 11 are complete. Stage 12 is next.
+Stages 1 through 12 are complete. Stage 13 is next.
 
 Implemented:
 
@@ -27,6 +27,7 @@ Implemented:
 - Stale response protection through WorkItem revision comparison
 - WorkItem detail prefetch on row hover/focus
 - UX polish for loading, empty, error, polling, command, revision, and DEV states
+- Expanded backend MockMvc and frontend Vitest/React Testing Library/MSW test coverage
 
 Documentation:
 
@@ -84,6 +85,24 @@ docker compose build
 docker compose up
 ```
 
+## Tests
+
+Backend:
+
+```bash
+cd backend
+mvn test
+```
+
+If local Maven is unavailable, run the same tests through Docker Maven.
+
+Frontend:
+
+```bash
+cd frontend
+npm test -- --run
+```
+
 ## Railway Demo Deploy
 
 Railway deployment is documented in `docs/deploy-railway.md`.
@@ -121,4 +140,4 @@ Required Railway env:
 
 ## Next Development Stage
 
-The next implementation stage is expanded testing. Final demo documentation is planned but intentionally not implemented yet.
+The next implementation stage is final demo documentation and runbook material. It is intentionally not implemented yet.

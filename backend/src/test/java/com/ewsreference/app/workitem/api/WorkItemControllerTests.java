@@ -5,11 +5,13 @@ import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -27,6 +29,12 @@ class WorkItemControllerTests {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    @BeforeEach
+    void resetState() throws Exception {
+        mockMvc.perform(post("/api/dev/reset"))
+                .andExpect(status().isOk());
+    }
 
     @Test
     void listReturnsSeededWorkItems() throws Exception {
@@ -154,6 +162,36 @@ class WorkItemControllerTests {
                 .andExpect(jsonPath("$.status").value(400))
                 .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"))
                 .andExpect(jsonPath("$.details.field").value("tags"));
+    }
+
+    @Test
+    void patchInvalidStatusReturns400ApiError() throws Exception {
+        mockMvc.perform(patch("/api/work-items/wi-1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "status": "archived"
+                                }
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"))
+                .andExpect(jsonPath("$.details.field").value("status"));
+    }
+
+    @Test
+    void patchInvalidPriorityReturns400ApiError() throws Exception {
+        mockMvc.perform(patch("/api/work-items/wi-1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "priority": "urgent"
+                                }
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"))
+                .andExpect(jsonPath("$.details.field").value("priority"));
     }
 
     @Test

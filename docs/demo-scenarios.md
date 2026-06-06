@@ -1,6 +1,6 @@
 # Demo Scenarios
 
-This project now implements the core WorkItem demo scenarios through Stage 11. This file remains a compact scenario checklist; the final runbook is planned for Stage 13.
+This project now implements and tests the core WorkItem demo scenarios through Stage 12. This file remains a compact scenario checklist; the final runbook is planned for Stage 13.
 
 Future scenarios should document expected UI state, API calls, and recovery behavior. The planned order below matches the roadmap.
 

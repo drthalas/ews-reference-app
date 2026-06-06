@@ -2,7 +2,7 @@
 
 The backend is a Java 21 Spring Boot service named `ews-reference-backend`.
 
-Stage 10 includes the WorkItem runtime API, shared API error types, local-only DEV controls, conflict details, stale response simulation, and an in-memory async command flow.
+Stage 12 includes the WorkItem runtime API, shared API error types, local-only DEV controls, conflict details, stale response simulation, an in-memory async command flow, and expanded MockMvc coverage for those implemented flows.
 
 ## Package Layout
 
@@ -86,6 +86,10 @@ Command operations are also stored in memory. The async command implementation u
 ## Documentation
 
 springdoc-openapi generates OpenAPI documentation and serves Swagger UI at `/swagger-ui.html`.
+
+## Testing
+
+Backend tests use Spring Boot Test and MockMvc. Mutable controller tests reset in-memory WorkItem, command, and DEV state before each test so scenarios remain deterministic. Coverage includes WorkItem list/detail/PATCH validation, DEV settings/actions, async commands, conflict responses, stale responses, and reset behavior.
 
 ## Exclusions
 

@@ -61,3 +61,5 @@ Stage 10 stale response handling uses revision-aware `merge` policies on `getWor
 Successful DEV reset clears RTK Query cache so deterministic seed data with lower revisions can replace newer cached revisions.
 
 Stage 11 prefetch uses `workItemsApi.usePrefetch('getWorkItem')` from row hover/focus handlers with `ifOlderThan`, so detail data is warmed without adding render-time network requests.
+
+Stage 12 frontend tests use MSW to mock the HTTP boundary and exercise RTK Query hooks through real rendered feature components. Test stores are created with `createAppStore` so query cache, middleware, and UI-only WorkItem event state are isolated per test.

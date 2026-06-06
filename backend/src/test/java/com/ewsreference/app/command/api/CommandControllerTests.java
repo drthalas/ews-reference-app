@@ -8,6 +8,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -28,6 +29,12 @@ class CommandControllerTests {
     @Autowired
     private ObjectMapper objectMapper;
 
+    @BeforeEach
+    void resetState() throws Exception {
+        mockMvc.perform(post("/api/dev/reset"))
+                .andExpect(status().isOk());
+    }
+
     @Test
     void submitCommandReturns202AndCompletesLater() throws Exception {
         MvcResult beforeResult = mockMvc.perform(get("/api/work-items/wi-1"))
@@ -46,6 +53,7 @@ class CommandControllerTests {
                 .andExpect(jsonPath("$.operationId").exists())
                 .andExpect(jsonPath("$.status").value("pending"))
                 .andExpect(jsonPath("$.workItemId").value("wi-1"))
+                .andExpect(jsonPath("$.createdAt").exists())
                 .andReturn();
         JsonNode submitted = objectMapper.readTree(submitResult.getResponse().getContentAsString());
         String operationId = submitted.get("operationId").asText();
@@ -72,6 +80,37 @@ class CommandControllerTests {
                 .andExpect(jsonPath("$.status").value("done"))
                 .andExpect(jsonPath("$.pendingOperation").doesNotExist())
                 .andExpect(jsonPath("$.revision").value(greaterThan(before.get("revision").asInt() + 1)));
+    }
+
+    @Test
+    void submitCommandRejectsSecondCommandWhileWorkItemHasPendingOperation() throws Exception {
+        MvcResult submitResult = mockMvc.perform(post("/api/work-items/wi-2/commands")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "type": "complete"
+                                }
+                                """))
+                .andExpect(status().isAccepted())
+                .andReturn();
+        String operationId = objectMapper.readTree(submitResult.getResponse().getContentAsString())
+                .get("operationId")
+                .asText();
+
+        mockMvc.perform(get("/api/work-items/wi-2"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.pendingOperation").value(operationId));
+
+        mockMvc.perform(post("/api/work-items/wi-2/commands")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "type": "complete"
+                                }
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"))
+                .andExpect(jsonPath("$.details.field").value("pendingOperation"));
     }
 
     @Test

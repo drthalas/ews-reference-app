@@ -14,8 +14,8 @@
 9. DEV panel - done.
 10. Conflict and stale scenarios - done.
 11. Prefetch - done.
-12. Tests - next.
-13. Final demo documentation - planned.
+12. Tests - done.
+13. Final demo documentation - next.
 
 ## Stage Details
 
@@ -155,8 +155,17 @@ Completed implementation stage:
 
 ### 12. Tests
 
-Next stage: broaden backend, frontend, and scenario coverage for implemented behavior.
+Completed testing stage:
+
+- added deterministic reset-before-each behavior to mutable backend controller tests
+- expanded WorkItem validation coverage for invalid status and priority values
+- expanded async command coverage for the "already pending operation" validation path
+- added frontend Vitest, React Testing Library, jsdom, user-event, jest-dom, and MSW setup
+- added WorkItem UI tests for loading, list/detail rendering, prefetch, error, empty, edit cancel, classic save, optimistic rollback, conflict state, and stale event log behavior
+- added DEV panel UI coverage for drawer opening and disabled selected-item actions
+- documented frontend test commands
+- kept Playwright/e2e, new product features, and new backend scenarios out of scope
 
 ### 13. Final Demo Documentation
 
-Document the complete demo flow, expected outcomes, and local run instructions.
+Next stage: document the complete demo flow, expected outcomes, local run instructions, API examples, runbook, known limitations, and demo script.
