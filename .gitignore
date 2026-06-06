@@ -1,0 +1,22 @@
+.DS_Store
+
+# Java
+target/
+*.class
+
+# Node
+node_modules/
+dist/
+npm-debug.log*
+
+# IDE
+.idea/
+.vscode/
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
