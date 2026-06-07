@@ -207,6 +207,7 @@ export function WorkItemsReadOnly() {
   const [lastRefreshAt, setLastRefreshAt] = useState<Date | null>(null);
   const staleEvent = useSelector((state: RootState) => state.workItemEvents.lastStaleResponse);
   const recentEvents = useSelector((state: RootState) => state.workItemEvents.recentEvents);
+  const resetVersion = useSelector((state: RootState) => state.workItemEvents.resetVersion);
   const pollingInterval = isPollingEnabled && !optimisticPendingId ? POLLING_INTERVAL_MS : 0;
   const {
     data: workItems,
@@ -399,6 +400,7 @@ export function WorkItemsReadOnly() {
             onReloadFromBackend={reloadSelectedWorkItem}
             staleEvent={staleEvent}
             onRecordEvent={recordWorkItemEvent}
+            resetVersion={resetVersion}
           />
         </Grid>
       </Grid>
@@ -589,6 +591,7 @@ function WorkItemDetails({
   onReloadFromBackend,
   staleEvent,
   onRecordEvent,
+  resetVersion,
 }: {
   workItem: WorkItem | null;
   isLoading: boolean;
@@ -598,6 +601,7 @@ function WorkItemDetails({
   onReloadFromBackend: () => void;
   staleEvent: StaleResponseEvent | null;
   onRecordEvent: (event: Omit<Exclude<WorkItemUiEvent, StaleResponseEvent>, 'createdAt'>) => void;
+  resetVersion: number;
 }) {
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState<WorkItemDraft | null>(null);
@@ -630,6 +634,19 @@ function WorkItemDetails({
     setConflictState(null);
     setFormError(null);
   }, [workItem?.id]);
+
+  useEffect(() => {
+    setIsEditing(false);
+    setConflictState(null);
+    setFormError(null);
+    setSuccessMessage(null);
+    setActiveOperationId(null);
+    lastCommandNoticeKeyRef.current = null;
+    terminalCommandIdsRef.current.clear();
+    if (workItem) {
+      setDraft(toDraft(workItem));
+    }
+  }, [resetVersion]);
 
   useEffect(() => {
     if (

@@ -2,7 +2,10 @@ import { fireEvent, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { describe, expect, it, vi } from 'vitest';
-import { staleResponseIgnored } from '../model/workItemEventsSlice';
+import { createAppStore } from '../../../app/store';
+import { baseApi } from '../../../shared/api/baseApi';
+import { workItemsApi } from '../api/workItemsApi';
+import { staleResponseIgnored, workItemFrontendStateReset } from '../model/workItemEventsSlice';
 import type { CommandOperation, UpdateWorkItemRequest, WorkItem } from '../model/workItem';
 import { WorkItemsReadOnly } from './WorkItemsReadOnly';
 import { apiBaseUrl, apiError, cloneWorkItems, server } from '../../../test/server';
@@ -225,5 +228,97 @@ describe('WorkItemsReadOnly', () => {
     expect(await screen.findByText('Async command op-async принята backend.')).toBeInTheDocument();
     expect(await screen.findByText('Async command op-async завершена.')).toBeInTheDocument();
     expect(screen.getAllByText(/wi-2: command op-async completed/)).toHaveLength(1);
+  });
+
+  it('reset clears stale UI state and accepts seed revisions again', async () => {
+    const user = userEvent.setup();
+    let items = cloneWorkItems().map((item) => ({
+      ...item,
+      revision: item.id === 'wi-1' ? 3 : 2,
+      updatedAt: '2026-06-06T00:03:00Z',
+    }));
+    server.use(
+      http.get(`${apiBaseUrl}/work-items`, () =>
+        HttpResponse.json(items.map((item) => ({ ...item, tags: [...item.tags] })))
+      ),
+      http.get(`${apiBaseUrl}/work-items/:id`, ({ params }) => {
+        const item = items.find((candidate) => candidate.id === params.id);
+        if (!item) {
+          return HttpResponse.json(apiError(404, 'WORK_ITEM_NOT_FOUND', 'WorkItem was not found.'), {
+            status: 404,
+          });
+        }
+        return HttpResponse.json({ ...item, tags: [...item.tags] });
+      }),
+      http.post(`${apiBaseUrl}/dev/reset`, () => {
+        items = cloneWorkItems();
+        return HttpResponse.json({
+          responseDelayMs: 0,
+          failNextRequest: false,
+          failNextCommand: false,
+          staleResponseMode: false,
+          conflictMode: false,
+          lastResetAt: '2026-06-06T00:04:00Z',
+          lastDevAction: 'reset',
+        });
+      })
+    );
+
+    const { store } = renderWithProviders(<WorkItemsReadOnly />);
+
+    await screen.findByText('rev 3');
+    store.dispatch(
+      staleResponseIgnored({
+        workItemId: 'wi-1',
+        incomingRevision: 1,
+        currentRevision: 3,
+        source: 'list',
+      })
+    );
+    expect(await screen.findByText(/wi-1: stale list rev 1 ignored, kept rev 3/)).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /DEV panel/ }));
+    await user.click(await screen.findByRole('button', { name: 'Reset backend state' }));
+
+    await waitFor(() => expect(screen.getAllByText('rev 1').length).toBeGreaterThan(0));
+    expect(screen.queryByText(/wi-1: stale list rev 1 ignored/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/^Stale response ignored:/)).not.toBeInTheDocument();
+  });
+
+  it('does not record stale events from WorkItem reads that started before frontend reset', async () => {
+    const store = createAppStore();
+    let calls = 0;
+    let resolveSecondRead: () => void = () => {};
+    const secondRead = new Promise<void>((resolve) => {
+      resolveSecondRead = resolve;
+    });
+
+    server.use(
+      http.get(`${apiBaseUrl}/work-items`, async () => {
+        calls += 1;
+        if (calls === 1) {
+          return HttpResponse.json(
+            cloneWorkItems().map((item) => ({
+              ...item,
+              revision: item.id === 'wi-1' ? 3 : 2,
+            }))
+          );
+        }
+        await secondRead;
+        return HttpResponse.json(cloneWorkItems());
+      })
+    );
+
+    await store.dispatch(workItemsApi.endpoints.getWorkItems.initiate()).unwrap();
+    const staleRead = store.dispatch(
+      workItemsApi.endpoints.getWorkItems.initiate(undefined, { forceRefetch: true })
+    );
+
+    store.dispatch(workItemFrontendStateReset());
+    resolveSecondRead();
+    await staleRead.unwrap();
+
+    expect(store.getState().workItemEvents.recentEvents).toEqual([]);
+    store.dispatch(baseApi.util.resetApiState());
   });
 });

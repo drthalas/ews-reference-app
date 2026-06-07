@@ -259,8 +259,10 @@ export function DevPanel({ selectedWorkItemId, onRefreshWorkItems }: DevPanelPro
                 variant="outlined"
                 disabled={isBusy}
                 onClick={() =>
-                  runAction('Следующий WorkItem read вернёт controlled stale response.', () =>
-                    triggerStaleResponse().unwrap()
+                  runAction(
+                    'Controlled stale response запрошен; WorkItems refresh запущен.',
+                    () => triggerStaleResponse().unwrap(),
+                    true
                   )
                 }
               >

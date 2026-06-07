@@ -74,10 +74,14 @@ export const workItemsApi = baseApi.injectEndpoints({
       query: () => '/work-items',
       merge: mergeWorkItemList,
       async onQueryStarted(_arg, { dispatch, getState, queryFulfilled }) {
-        const previous = workItemsApi.endpoints.getWorkItems.select()(getState() as RootState)
-          .data;
+        const stateBefore = getState() as RootState;
+        const resetVersion = stateBefore.workItemEvents.resetVersion;
+        const previous = workItemsApi.endpoints.getWorkItems.select()(stateBefore).data;
         try {
           const { data: incomingItems } = await queryFulfilled;
+          if ((getState() as RootState).workItemEvents.resetVersion !== resetVersion) {
+            return;
+          }
           incomingItems.forEach((incomingItem) => {
             const state = getState() as RootState;
             const previousListItem = previous?.find((workItem) => workItem.id === incomingItem.id);
@@ -120,12 +124,16 @@ export const workItemsApi = baseApi.injectEndpoints({
       merge: mergeWorkItemDetail,
       async onQueryStarted(id, { dispatch, getState, queryFulfilled }) {
         const stateBefore = getState() as RootState;
+        const resetVersion = stateBefore.workItemEvents.resetVersion;
         const previous = workItemsApi.endpoints.getWorkItem.select(id)(stateBefore).data;
         const previousFromList = workItemsApi.endpoints.getWorkItems
           .select()(stateBefore)
           .data?.find((workItem) => workItem.id === id);
         try {
           const { data: incomingItem } = await queryFulfilled;
+          if ((getState() as RootState).workItemEvents.resetVersion !== resetVersion) {
+            return;
+          }
           const current = freshest(previous, previousFromList);
           if (current && incomingItem.revision < current.revision) {
             dispatch(

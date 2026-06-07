@@ -21,11 +21,13 @@ export type WorkItemUiEvent =
 type WorkItemEventsState = {
   lastStaleResponse: StaleResponseEvent | null;
   recentEvents: WorkItemUiEvent[];
+  resetVersion: number;
 };
 
 const initialState: WorkItemEventsState = {
   lastStaleResponse: null,
   recentEvents: [],
+  resetVersion: 0,
 };
 
 const workItemEventsSlice = createSlice({
@@ -63,6 +65,11 @@ const workItemEventsSlice = createSlice({
       state.lastStaleResponse = null;
       state.recentEvents = [];
     },
+    workItemFrontendStateReset(state) {
+      state.lastStaleResponse = null;
+      state.recentEvents = [];
+      state.resetVersion += 1;
+    },
   },
 });
 
@@ -70,6 +77,7 @@ export const {
   clearStaleResponseEvent,
   clearWorkItemEvents,
   staleResponseIgnored,
+  workItemFrontendStateReset,
   workItemEventRecorded,
 } = workItemEventsSlice.actions;
 

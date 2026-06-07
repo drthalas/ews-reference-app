@@ -1,5 +1,5 @@
 import { baseApi } from '../../../shared/api/baseApi';
-import { clearWorkItemEvents } from '../../workItems/model/workItemEventsSlice';
+import { workItemFrontendStateReset } from '../../workItems/model/workItemEventsSlice';
 import type {
   DevActionResult,
   DevSettings,
@@ -30,7 +30,7 @@ export const devPanelApi = baseApi.injectEndpoints({
       async onQueryStarted(_arg, { dispatch, queryFulfilled }) {
         try {
           await queryFulfilled;
-          dispatch(clearWorkItemEvents());
+          dispatch(workItemFrontendStateReset());
           dispatch(baseApi.util.resetApiState());
         } catch {
           // The panel shows the mutation error; cache is only cleared after a confirmed reset.
