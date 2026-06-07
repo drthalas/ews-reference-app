@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { describe, expect, it, vi } from 'vitest';
 import { staleResponseIgnored } from '../model/workItemEventsSlice';
-import type { UpdateWorkItemRequest } from '../model/workItem';
+import type { CommandOperation, UpdateWorkItemRequest, WorkItem } from '../model/workItem';
 import { WorkItemsReadOnly } from './WorkItemsReadOnly';
 import { apiBaseUrl, apiError, cloneWorkItems, server } from '../../../test/server';
 import { renderWithProviders } from '../../../test/renderWithProviders';
@@ -171,5 +171,59 @@ describe('WorkItemsReadOnly', () => {
     );
 
     expect(await screen.findByText(/wi-1: stale list rev 1 ignored, kept rev 2/)).toBeInTheDocument();
+  });
+
+  it('handles completed async command once when WorkItem polling still has stale pendingOperation', async () => {
+    const user = userEvent.setup();
+    const items = cloneWorkItems();
+    const workItem = items.find((item) => item.id === 'wi-2') as WorkItem;
+    const command: CommandOperation = {
+      operationId: 'op-async',
+      status: 'pending',
+      workItemId: 'wi-2',
+      resultRevision: null,
+      error: null,
+      createdAt: '2026-06-06T00:01:00Z',
+      completedAt: null,
+    };
+
+    server.use(
+      http.get(`${apiBaseUrl}/work-items`, () =>
+        HttpResponse.json(items.map((item) => ({ ...item, tags: [...item.tags] })))
+      ),
+      http.get(`${apiBaseUrl}/work-items/:id`, ({ params }) => {
+        const item = items.find((candidate) => candidate.id === params.id);
+        if (!item) {
+          return HttpResponse.json(apiError(404, 'WORK_ITEM_NOT_FOUND', 'WorkItem was not found.'), {
+            status: 404,
+          });
+        }
+        return HttpResponse.json({ ...item, tags: [...item.tags] });
+      }),
+      http.post(`${apiBaseUrl}/work-items/:id/commands`, ({ params }) => {
+        workItem.pendingOperation = 'op-async';
+        workItem.revision = 2;
+        workItem.updatedAt = '2026-06-06T00:01:00Z';
+        return HttpResponse.json({ ...command, workItemId: params.id as string }, { status: 202 });
+      }),
+      http.get(`${apiBaseUrl}/commands/:operationId`, ({ params }) =>
+        HttpResponse.json({
+          ...command,
+          operationId: params.operationId as string,
+          status: 'completed',
+          resultRevision: 3,
+          completedAt: '2026-06-06T00:02:00Z',
+        })
+      )
+    );
+
+    renderWithProviders(<WorkItemsReadOnly />);
+
+    await user.click(await screen.findByRole('button', { name: /Prepare field validation/ }));
+    await user.click(screen.getByRole('button', { name: 'Запустить async complete' }));
+
+    expect(await screen.findByText('Async command op-async принята backend.')).toBeInTheDocument();
+    expect(await screen.findByText('Async command op-async завершена.')).toBeInTheDocument();
+    expect(screen.getAllByText(/wi-2: command op-async completed/)).toHaveLength(1);
   });
 });

@@ -31,7 +31,7 @@ import {
   Typography,
 } from '@mui/material';
 import { skipToken } from '@reduxjs/toolkit/query';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import type { RootState } from '../../../app/store';
 import { DevPanel } from '../../devPanel/ui/DevPanel';
@@ -242,15 +242,21 @@ export function WorkItemsReadOnly() {
   } = useGetWorkItemQuery(selectedId ?? skipToken, { pollingInterval });
 
   const selectedWorkItem = selectedFromList ?? selectedDetails ?? null;
-  const prefetchDetails = (id: string) => {
+  const prefetchDetails = useCallback((id: string) => {
     prefetchWorkItem(id, { ifOlderThan: 20 });
-  };
-  const reloadSelectedWorkItem = () => {
+  }, [prefetchWorkItem]);
+  const reloadSelectedWorkItem = useCallback(() => {
     refetch();
     if (selectedId) {
       refetchSelectedDetails();
     }
-  };
+  }, [refetch, refetchSelectedDetails, selectedId]);
+  const recordWorkItemEvent = useCallback(
+    (event: Omit<Exclude<WorkItemUiEvent, StaleResponseEvent>, 'createdAt'>) => {
+      dispatch(workItemEventRecorded(event));
+    },
+    [dispatch]
+  );
 
   if (isListLoading) {
     return (
@@ -392,7 +398,7 @@ export function WorkItemsReadOnly() {
             onOptimisticPendingChange={setOptimisticPendingId}
             onReloadFromBackend={reloadSelectedWorkItem}
             staleEvent={staleEvent}
-            onRecordEvent={(event) => dispatch(workItemEventRecorded(event))}
+            onRecordEvent={recordWorkItemEvent}
           />
         </Grid>
       </Grid>
@@ -596,7 +602,8 @@ function WorkItemDetails({
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState<WorkItemDraft | null>(null);
   const [activeOperationId, setActiveOperationId] = useState<string | null>(null);
-  const [lastCommandNoticeId, setLastCommandNoticeId] = useState<string | null>(null);
+  const lastCommandNoticeKeyRef = useRef<string | null>(null);
+  const terminalCommandIdsRef = useRef<Set<string>>(new Set());
   const [formError, setFormError] = useState<string | null>(null);
   const [conflictState, setConflictState] = useState<ConflictState | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -625,42 +632,60 @@ function WorkItemDetails({
   }, [workItem?.id]);
 
   useEffect(() => {
-    if (workItem?.pendingOperation && workItem.pendingOperation !== activeOperationId) {
+    if (
+      workItem?.pendingOperation &&
+      workItem.pendingOperation !== activeOperationId &&
+      !terminalCommandIdsRef.current.has(workItem.pendingOperation)
+    ) {
       setActiveOperationId(workItem.pendingOperation);
     }
   }, [activeOperationId, workItem?.pendingOperation]);
 
   useEffect(() => {
-    if (!commandOperation) {
+    if (!commandOperation || commandOperation.status === 'pending') {
       return;
     }
 
-    if (commandOperation.operationId === lastCommandNoticeId) {
+    const noticeKey = `${commandOperation.operationId}:${commandOperation.status}`;
+    if (noticeKey === lastCommandNoticeKeyRef.current) {
+      if (activeOperationId === commandOperation.operationId) {
+        setActiveOperationId(null);
+      }
       return;
     }
+
+    lastCommandNoticeKeyRef.current = noticeKey;
+    terminalCommandIdsRef.current.add(commandOperation.operationId);
 
     if (commandOperation.status === 'completed') {
       setSuccessMessage(`Async command ${commandOperation.operationId} завершена.`);
-      setLastCommandNoticeId(commandOperation.operationId);
       onRecordEvent({
         type: 'success',
         workItemId: commandOperation.workItemId,
         message: `command ${commandOperation.operationId} completed`,
       });
-      setActiveOperationId(null);
     }
 
     if (commandOperation.status === 'failed') {
       setFormError(commandOperation.error ?? `Async command ${commandOperation.operationId} failed.`);
-      setLastCommandNoticeId(commandOperation.operationId);
       onRecordEvent({
         type: 'error',
         workItemId: commandOperation.workItemId,
         message: `command ${commandOperation.operationId} failed`,
       });
+    }
+
+    if (activeOperationId === commandOperation.operationId) {
       setActiveOperationId(null);
     }
-  }, [commandOperation, lastCommandNoticeId, onRecordEvent]);
+  }, [
+    activeOperationId,
+    commandOperation?.error,
+    commandOperation?.operationId,
+    commandOperation?.status,
+    commandOperation?.workItemId,
+    onRecordEvent,
+  ]);
 
   if (isLoading) {
     return (
@@ -798,7 +823,8 @@ function WorkItemDetails({
         command: { type: 'complete' },
       }).unwrap();
       setActiveOperationId(submitted.operationId);
-      setLastCommandNoticeId(null);
+      lastCommandNoticeKeyRef.current = null;
+      terminalCommandIdsRef.current.delete(submitted.operationId);
       setSuccessMessage(`Async command ${submitted.operationId} принята backend.`);
       onRecordEvent({
         type: 'info',
